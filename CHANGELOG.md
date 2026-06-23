@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Security — Fase 6: Auditoría de seguridad (2026-06-24)
+- **Eliminado `drizzle-orm`** (advisory SQLi por identificadores; no se usaba — queries raw parametrizadas) → **producción con 0 vulnerabilidades**.
+- Añadido `secureHeaders` (CSP, HSTS, nosniff, X-Frame), `bodyLimit` 256KB, **rate limit global** 120/min, `onError` genérico (no filtra stack traces).
+- Corregido CORS: faltaba método `PUT`.
+- Doc `09-seguridad.md`: modelo de amenazas (A1–A12), revisión OWASP/API, riesgos abiertos (ubicación exacta, token de bloqueado 15 min, rate limit en memoria).
+- Verificado: sin SQLi en código de app, sin secretos en git, 29/29 tests verde.
+- Avisos dev restantes (vitest/vite/esbuild) documentados como sin impacto en producción.
+
 ### Added — Fase 4: Backend por módulos, lote 2 (2026-06-24)
 - Módulos **communities, moderation, admin, analytics, media**.
 - communities: foro/chat, miembros, roles; autorización por pertenencia (no-miembro bloqueado, solo moderador oculta, autor/mod borra).
