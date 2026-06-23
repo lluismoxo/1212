@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 4: Backend por módulos, lote 2 (2026-06-24)
+- Módulos **communities, moderation, admin, analytics, media**.
+- communities: foro/chat, miembros, roles; autorización por pertenencia (no-miembro bloqueado, solo moderador oculta, autor/mod borra).
+- moderation: reportes (usuario) + resolución (admin).
+- admin (rol admin): stats, listar/buscar usuarios, bloquear cuenta (revoca sesiones), gestionar roles, log de auditoría. Diario excluido por privacidad.
+- analytics propia con lista blanca de eventos (migración 007 `analytics_events`). No se venden datos.
+- media: presigned uploads a Cloudflare R2 (binario no pasa por la API); SDK aws como dependencia opcional; 503 si no configurado.
+- **7 tests nuevos (29 totales)** contra Neon, verde. Typecheck limpio.
+- Doc `08-backend-modulos-lote2.md`. Backend MVP completo (auth + 11 módulos).
+
 ### Added — Fase 4: Backend por módulos, lote 1 (2026-06-24)
 - Módulos **profiles, location, habits, tasks, journal** (service + routes + Zod).
 - profiles: perfil propio/público, username único, enlaces sociales, onboarding.

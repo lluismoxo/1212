@@ -8,6 +8,11 @@ import { locationRoutes } from "./modules/location/routes.js";
 import { habitRoutes } from "./modules/habits/routes.js";
 import { taskRoutes } from "./modules/tasks/routes.js";
 import { journalRoutes } from "./modules/journal/routes.js";
+import { communityRoutes } from "./modules/communities/routes.js";
+import { moderationRoutes } from "./modules/moderation/routes.js";
+import { adminRoutes } from "./modules/admin/routes.js";
+import { analyticsRoutes } from "./modules/analytics/routes.js";
+import { mediaRoutes } from "./modules/media/routes.js";
 
 const env = getEnv();
 const app = new Hono();
@@ -29,7 +34,11 @@ app.route("/location", locationRoutes);
 app.route("/habits", habitRoutes);
 app.route("/tasks", taskRoutes);
 app.route("/journal", journalRoutes);
-// Pendientes (siguiente lote Fase 4): media, communities, moderation, admin, analytics.
+app.route("/communities", communityRoutes);
+app.route("/moderation", moderationRoutes);
+app.route("/admin", adminRoutes);
+app.route("/analytics", analyticsRoutes);
+app.route("/media", mediaRoutes);
 
 serve({ fetch: app.fetch, port: env.PORT });
 console.log(`1212-api escuchando en :${env.PORT}`);
