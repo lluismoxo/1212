@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 3: Autenticación (2026-06-24)
+- Auth OIDC Google/Apple sobre la API propia. Endpoints: `/auth/login`, `/refresh`, `/logout`, `/logout-all`, `DELETE /account`, `/me`.
+- JWT access (15 min) + refresh opaco (30 d, solo hash en DB) con **rotación + reuse detection** (revoca familia ante robo).
+- Verificación de `id_token` contra JWKS de Google/Apple (`lib/oidc`), JWT propio (`lib/jwt`), tokens (`lib/tokens`).
+- Middleware `requireAuth`/`requireRole`/`requireAdmin` + rate limiting (login 10/min, refresh 30/min) + CORS + validación Zod.
+- Eliminación de cuenta (cascade + anonimización de mensajes). Bloqueo de cuenta vía `auth_users.disabled`.
+- **14 tests** (vitest) contra Neon: jwt, tokens, oidc, y flujo completo de auth. Todos en verde.
+- Migración `..._006_fix_provision_username.sql`: **bug encontrado por los tests** — username provisional excedía 20 chars y violaba el check; truncado a 20.
+- Docs `05-autenticacion.md`, `06-oauth-setup.md`. Añadido `@types/node`, `jose`, `vitest.config.ts`, tipado de contexto Hono.
+
 ### Changed — Pivote de backend: Supabase → Neon + API propia (2026-06-24)
 - Supabase descartado (plan free agotado). Ver `docs/adr/0001-backend-neon-api-propia.md`.
 - `supabase/` → `db/`. Eliminada `config.toml` y la migración `..._rls.sql` (RLS dependía de `auth.uid()`).
