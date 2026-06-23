@@ -1,16 +1,18 @@
 # FASE 2 — Modelo de datos
 
-> App **1212**. Postgres (Supabase) + PostGIS + RLS. Borrador para aprobación.
-> Fecha: 2026-06-24. Migraciones en `supabase/migrations/`.
+> App **1212**. Postgres (**Neon**) + PostGIS. Borrador para aprobación.
+> Fecha: 2026-06-24 (rev. backend Neon — ver `docs/adr/0001`). Migraciones en `db/migrations/`.
 
-Principios: integridad referencial, RLS en toda tabla expuesta, separación usuario/admin, índices desde el día 1, sin datos huérfanos, borrado/anonimización de cuenta soportado.
+Principios: integridad referencial, separación usuario/admin, índices desde el día 1, sin datos huérfanos, borrado/anonimización de cuenta soportado.
+**Autorización: en la capa API** (no RLS — ver ADR 0001). La DB expone tablas; la API filtra por dueño/pertenencia en cada query.
 
 ---
 
 ## Mapa de entidades
 
 ```
-auth.users (gestionado por Supabase)
+auth_users ──< auth_identities (google/apple)
+   │         └─< auth_sessions (refresh tokens)
    │ 1:1
    ▼
 profiles ──< social_links
@@ -37,12 +39,18 @@ Convenciones: PK `uuid` (`gen_random_uuid()`), timestamps `created_at`/`updated_
 
 ## Entidades
 
+### `auth_users` / `auth_identities` / `auth_sessions` — auth propia
+Reemplazan `auth.users` de Supabase (ver ADR 0001).
+- **auth_users**: `id`, `email` (citext unique), `email_verified`, `last_login_at`, `disabled` (bloqueo de cuenta por abuso/baneo).
+- **auth_identities**: una fila por proveedor enlazado. `provider` (google/apple) + `provider_uid` (el `sub` del OIDC), unique `(provider, provider_uid)`. Permite multi-login.
+- **auth_sessions**: refresh tokens. Se guarda **solo el hash** (`refresh_hash`), nunca el token en claro. `expires_at`, `revoked_at` (logout/revocación). Los access tokens son JWT efímeros, no se persisten.
+
 ### `profiles` — perfil público del usuario
-Propósito: datos públicos que ve la comunidad. 1:1 con `auth.users`.
+Propósito: datos públicos que ve la comunidad. 1:1 con `auth_users`.
 
 | Columna | Tipo | Notas |
 |---|---|---|
-| id | uuid PK | = `auth.users.id` (FK on delete cascade) |
+| id | uuid PK | = `auth_users.id` (FK on delete cascade) |
 | username | citext UNIQUE | público, `@handle`, validado |
 | display_name | text | nombre visible |
 | avatar_url | text | ruta en bucket `avatars` |
@@ -114,7 +122,7 @@ Propósito: definición de los 9 niveles (nombre, descripción, colores). Solo l
 |---|---|---|
 | id | uuid PK | |
 | habit_id | uuid FK→habits | on delete cascade |
-| profile_id | uuid FK→profiles | denormalizado para RLS rápida |
+| profile_id | uuid FK→profiles | denormalizado para filtrado rápido por dueño en la API |
 | log_date | date | |
 | done | boolean | |
 | UNIQUE | (habit_id, log_date) | un registro por día |
@@ -188,14 +196,14 @@ Propósito: definición de los 9 niveles (nombre, descripción, colores). Solo l
 
 ### `audit_logs` — logs de seguridad/auditoría (solo admin lee)
 | id, actor_id NULL, action, entity_type, entity_id, ip inet NULL, user_agent NULL, metadata jsonb, created_at |
-Append-only. Sin RLS de lectura para usuarios.
+Append-only. Solo accesible por endpoints de admin en la API.
 
 ### `app_config` — configuración global
 | key text PK, value jsonb, updated_at | Solo admin escribe/lee.
 
 ---
 
-## Roles y acceso (resumen RLS)
+## Roles y acceso (aplicado en la API)
 
 | Rol | Lectura | Escritura |
 |---|---|---|
@@ -204,7 +212,7 @@ Append-only. Sin RLS de lectura para usuarios.
 | moderador | + contenido de comunidades que modera | + ocultar mensajes / gestionar miembros de sus comunidades |
 | admin | todo (incl. audit_logs, app_config) | todo |
 
-Detalle de políticas RLS → en la migración SQL.
+Detalle de la autorización → middleware + repositorios de la API (Fase 4).
 
 ---
 
@@ -223,7 +231,7 @@ Detalle de políticas RLS → en la migración SQL.
 - `username` citext + check formato `^[a-z0-9_.]{3,20}$`.
 
 ## Migraciones / versionado
-- Una migración por cambio, numeradas por timestamp (`supabase/migrations/<ts>_<nombre>.sql`).
+- Una migración por cambio, numeradas por timestamp (`db/migrations/<ts>_<nombre>.sql`).
 - Nunca editar una migración aplicada; siempre nueva.
 - Semillas (levels 1..9, roles) en migración aparte idempotente.
 

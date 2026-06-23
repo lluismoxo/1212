@@ -22,21 +22,21 @@ create table public.community_members (
 );
 create index community_members_profile_idx on public.community_members (profile_id);
 
--- helper: ¿el usuario actual pertenece a la comunidad?
-create or replace function public.is_member(c_id uuid)
-returns boolean language sql stable security definer set search_path = public as $$
+-- helper: ¿pertenece p_id a la comunidad? (usado por la API)
+create or replace function public.is_member(c_id uuid, p_id uuid)
+returns boolean language sql stable as $$
   select exists (
     select 1 from public.community_members
-    where community_id = c_id and profile_id = auth.uid()
+    where community_id = c_id and profile_id = p_id
   );
 $$;
 
--- helper: ¿el usuario actual modera la comunidad?
-create or replace function public.is_moderator(c_id uuid)
-returns boolean language sql stable security definer set search_path = public as $$
+-- helper: ¿modera p_id la comunidad? (usado por la API)
+create or replace function public.is_moderator(c_id uuid, p_id uuid)
+returns boolean language sql stable as $$
   select exists (
     select 1 from public.community_members
-    where community_id = c_id and profile_id = auth.uid() and role = 'moderator'
+    where community_id = c_id and profile_id = p_id and role = 'moderator'
   );
 $$;
 

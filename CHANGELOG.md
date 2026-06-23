@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Changed — Pivote de backend: Supabase → Neon + API propia (2026-06-24)
+- Supabase descartado (plan free agotado). Ver `docs/adr/0001-backend-neon-api-propia.md`.
+- `supabase/` → `db/`. Eliminada `config.toml` y la migración `..._rls.sql` (RLS dependía de `auth.uid()`).
+- Migración 1: añadidas tablas de auth propias (`auth_users`, `auth_identities`, `auth_sessions`); `profiles.id` referencia `auth_users`. Trigger → función `provision_user()`. Helpers `is_admin/is_member/is_moderator` ahora reciben el id como parámetro.
+- **Autorización movida a la capa API** (middleware por rol + filtrado por dueño en cada query). Ya no hay RLS como segunda barrera → tests de autorización obligatorios.
+- Scaffold de la API en `api/` (Node + Hono + Drizzle/postgres, runner de migraciones, `.env.example`, health check).
+- Docs `03`/`04` actualizadas con nota de pivote.
+
 ### Added — Fase 2: Modelo de datos (2026-06-24)
 - `docs/04-modelo-datos.md`: diseño completo (entidades, índices, constraints, roles, RLS, crecimiento).
 - `supabase/migrations/`: 5 migraciones SQL versionadas (extensiones+core, contenido, comunidad+moderación+auditoría, RLS, semillas). **No aplicadas aún** (proyecto Supabase pendiente de crear por límite de plan free).

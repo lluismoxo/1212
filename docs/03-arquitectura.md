@@ -1,7 +1,9 @@
 # FASE 1 — Arquitectura propuesta
 
-> App **1212**. Propuesta para aprobación. **No implementar todavía.**
+> App **1212**. Propuesta para aprobación.
 > Fecha: 2026-06-24.
+>
+> ⚠️ **Actualización:** Supabase quedó descartado (plan free agotado). El backend pasa a **Neon + API propia (Node/Hono) + Auth.js**. Las menciones a Supabase/RLS/Edge Functions de abajo se conservan como histórico — la decisión vigente está en **`docs/adr/0001-backend-neon-api-propia.md`**.
 
 Principio rector: simplicidad de MVP, sin deuda grave, escalable, segura desde el día 1, con frontend / backend / infraestructura **separados**.
 

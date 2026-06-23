@@ -1,5 +1,6 @@
--- 1212 · Migración inicial: extensiones, roles, perfiles, niveles, ubicación
--- Fase 2. Postgres 17 (Supabase). NO aplicada todavía (sin proyecto).
+-- 1212 · Migración inicial: extensiones, auth, roles, perfiles, niveles, ubicación
+-- Fase 2 (rev. Neon). Postgres + PostGIS. Auth y autorización propias (sin Supabase).
+-- NO aplicada todavía (sin base de datos Neon vinculada).
 
 -- ── Extensiones ───────────────────────────────────────────────
 create extension if not exists "pgcrypto";   -- gen_random_uuid()
@@ -14,6 +15,42 @@ begin
   return new;
 end $$;
 
+-- ── auth: usuarios + identidades OAuth (gestión propia) ───────
+-- Reemplaza auth.users de Supabase. La API crea/lee estas filas.
+create table public.auth_users (
+  id            uuid primary key default gen_random_uuid(),
+  email         citext unique,
+  email_verified boolean not null default false,
+  created_at    timestamptz not null default now(),
+  last_login_at timestamptz,
+  disabled      boolean not null default false   -- bloqueo de cuenta (abuso/baneo)
+);
+
+-- una fila por proveedor enlazado (google, apple). Permite multi-login.
+create table public.auth_identities (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references public.auth_users(id) on delete cascade,
+  provider      text not null check (provider in ('google','apple')),
+  provider_uid  text not null,                   -- 'sub' del OIDC
+  raw           jsonb not null default '{}'::jsonb,
+  created_at    timestamptz not null default now(),
+  unique (provider, provider_uid)
+);
+create index auth_identities_user_idx on public.auth_identities (user_id);
+
+-- refresh tokens (rotación). Access tokens son JWT efímeros, no se guardan.
+create table public.auth_sessions (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references public.auth_users(id) on delete cascade,
+  refresh_hash   text not null,                  -- hash del refresh token (nunca el token en claro)
+  user_agent     text,
+  ip             inet,
+  created_at     timestamptz not null default now(),
+  expires_at     timestamptz not null,
+  revoked_at     timestamptz
+);
+create index auth_sessions_user_idx on public.auth_sessions (user_id) where revoked_at is null;
+
 -- ── roles / autorización ──────────────────────────────────────
 create table public.roles (
   key   text primary key check (key in ('visitor','user','moderator','admin')),
@@ -27,18 +64,18 @@ create table public.user_roles (
   primary key (profile_id, role)
 );
 
--- helper: ¿es admin el usuario actual?
-create or replace function public.is_admin()
-returns boolean language sql stable security definer set search_path = public as $$
+-- helper: ¿es admin un perfil dado? (usado por la API server-side)
+create or replace function public.is_admin(p_id uuid)
+returns boolean language sql stable as $$
   select exists (
     select 1 from public.user_roles
-    where profile_id = auth.uid() and role = 'admin'
+    where profile_id = p_id and role = 'admin'
   );
 $$;
 
--- ── profiles (1:1 con auth.users) ─────────────────────────────
+-- ── profiles (1:1 con auth_users) ─────────────────────────────
 create table public.profiles (
-  id               uuid primary key references auth.users(id) on delete cascade,
+  id               uuid primary key references public.auth_users(id) on delete cascade,
   username         citext unique not null
                      check (username ~ '^[a-z0-9_.]{3,20}$'),
   display_name     text not null,
@@ -95,22 +132,19 @@ create table public.user_levels (
 create trigger user_levels_updated before update on public.user_levels
   for each row execute function public.set_updated_at();
 
--- ── crear profile + level al registrarse (trigger en auth) ────
-create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer set search_path = public as $$
+-- ── provisión de usuario nuevo (llamada por la API tras OAuth) ─
+-- La API la invoca dentro de una transacción al crear el auth_user.
+-- Crea profile + nivel inicial + rol 'user' de forma atómica e idempotente.
+create or replace function public.provision_user(p_id uuid, p_name text)
+returns void language plpgsql as $$
 begin
   insert into public.profiles (id, username, display_name)
   values (
-    new.id,
-    -- username provisional único; el usuario lo cambia en onboarding
-    'u' || replace(new.id::text, '-', '')::text,
-    coalesce(new.raw_user_meta_data->>'full_name', 'Usuario')
-  );
-  insert into public.user_levels (profile_id) values (new.id);
-  insert into public.user_roles (profile_id, role) values (new.id, 'user');
-  return new;
+    p_id,
+    'u' || replace(p_id::text, '-', ''),          -- username provisional único; se cambia en onboarding
+    coalesce(nullif(p_name, ''), 'Usuario')
+  )
+  on conflict (id) do nothing;
+  insert into public.user_levels (profile_id) values (p_id) on conflict do nothing;
+  insert into public.user_roles  (profile_id, role) values (p_id, 'user') on conflict do nothing;
 end $$;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
