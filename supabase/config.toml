@@ -1,0 +1,17 @@
+# Supabase config local · 1212
+# Generado manualmente (Fase 2). Ajustar project_id al vincular: `supabase link`.
+
+project_id = "1212"
+
+[db]
+major_version = 17
+
+[auth]
+enable_signup = true
+# Providers se configuran en el dashboard (Google, Apple) — ver Fase 3.
+
+[auth.external.google]
+enabled = true
+
+[auth.external.apple]
+enabled = true

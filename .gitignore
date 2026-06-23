@@ -1,1 +1,18 @@
 .DS_Store
+
+# Secrets / env (NUNCA versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Supabase local
+.branches
+.temp
+supabase/.temp/
+
+# Node / Expo (futuro frontend)
+node_modules/
+.expo/
+dist/
