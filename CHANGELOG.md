@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 4: Backend por módulos, lote 1 (2026-06-24)
+- Módulos **profiles, location, habits, tasks, journal** (service + routes + Zod).
+- profiles: perfil propio/público, username único, enlaces sociales, onboarding.
+- location: PostGIS upsert + `nearby`; respeta `location_sharing` (exact/city/off) como mitigación de privacidad; radio/límite acotados (anti-scraping).
+- habits: CRUD + log diario (upsert) + racha + logs semanales.
+- tasks: CRUD. journal: upsert por fecha + paginación (privado).
+- **Autorización por dueño** en todas las queries (filtro `profile_id`). Tests de aislamiento (no tocar datos ajenos → 404).
+- **8 tests nuevos** (22 totales) contra Neon, en verde. Typecheck limpio.
+- Doc `07-backend-modulos.md`.
+
 ### Added — Fase 3: Autenticación (2026-06-24)
 - Auth OIDC Google/Apple sobre la API propia. Endpoints: `/auth/login`, `/refresh`, `/logout`, `/logout-all`, `DELETE /account`, `/me`.
 - JWT access (15 min) + refresh opaco (30 d, solo hash en DB) con **rotación + reuse detection** (revoca familia ante robo).
