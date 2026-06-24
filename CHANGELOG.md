@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 8: Escalabilidad (2026-06-24)
+- Doc `12-escalabilidad.md`: análisis 100 → 100k usuarios, qué añadir y **cuándo** (Redis/cache a 10k, colas/CDN/archivado a 100k). No sobreoptimizar.
+- Migración `008_perf_indexes`: índice `auth_sessions(refresh_hash)` (hot path de refresh), índice parcial de perfiles públicos, `community_members(community_id)`.
+- Documentado el diseño que ya escala (API stateless, paginación keyset, PostGIS, storage desacoplado, límites de query). 29/29 tests verde.
+
 ### Added — Fase 9: Calidad (CI, entornos, deploy, rollback) (2026-06-24)
 - **GitHub Actions** (`.github/workflows/ci.yml`): job `api` (Postgres+PostGIS efímero → typecheck + migraciones + 29 tests + audit prod) y job `mobile` (typecheck). En cada push/PR.
 - Tests de integración detectan la DB por `DATABASE_URL` (ya no excluyen localhost) → corren en CI sobre Postgres limpio.
