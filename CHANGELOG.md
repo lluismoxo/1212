@@ -4,6 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Pantallas mobile restantes (2026-06-24)
+- **levels** (9 niveles + componente `Crystal` SVG, desbloqueo por nivel actual).
+- **profile**: perfil propio, control de **ubicación pública** (exact/city/off), cerrar sesión, **eliminar cuenta** (con confirmación).
+- **communities** (listado + unirse) y **community/[id]** (chat conectado a `/communities/:id/messages`).
+- **map**: usa `nearby` (PostGIS) con la ubicación del dispositivo; lista de personas cerca con distancia.
+- **search** (por username) + **u/[username]** (perfil público con enlaces y nivel).
+- Home enlaza a todas las secciones; hero con cristal → niveles. `react-native-svg` añadido. Typecheck limpio.
+
 ### Added — Fase 8: Escalabilidad (2026-06-24)
 - Doc `12-escalabilidad.md`: análisis 100 → 100k usuarios, qué añadir y **cuándo** (Redis/cache a 10k, colas/CDN/archivado a 100k). No sobreoptimizar.
 - Migración `008_perf_indexes`: índice `auth_sessions(refresh_hash)` (hot path de refresh), índice parcial de perfiles públicos, `community_members(community_id)`.

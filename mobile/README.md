@@ -29,7 +29,9 @@ src/
 
 ## Estado
 
-Lote 1: flujo auth + onboarding + permisos + home/hábitos/tareas/diario conectados a la API. Pendiente: niveles (detalle), comunidad, mapa global, perfil/ajustes, búsqueda.
+Pantallas conectadas a la API: auth, onboarding, consent, permisos, home, hábitos, tareas, diario, **niveles, perfil (con control de ubicación y eliminar cuenta), comunidades + chat, mapa (nearby), búsqueda y perfil público**. Componente `Crystal` (SVG) por nivel.
+
+Pendiente: pulido visual (glass del prototipo), subida de avatar (R2), edición completa de perfil, notificaciones.
 
 ## Pendientes (credenciales)
 - Login Google: configurar `GOOGLE_CLIENT_ID` y cablear `expo-auth-session` en `auth.tsx`.
