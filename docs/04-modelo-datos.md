@@ -57,7 +57,7 @@ Propósito: datos públicos que ve la comunidad. 1:1 con `auth_users`.
 | bio | text NULL | opcional |
 | city | text NULL | texto libre ("Madrid, España") |
 | is_public | boolean | default true (perfil público por diseño) |
-| location_sharing | text | enum: `exact` \| `city` \| `off`. Default `exact` (decisión producto) |
+| location_sharing | text | enum: `exact` \| `city` \| `off`. **Default `city`** (privacidad por defecto, migración 009) |
 | onboarding_done | boolean | default false |
 | created_at / updated_at | timestamptz | |
 | deleted_at | timestamptz NULL | soft-delete (anonimización) |

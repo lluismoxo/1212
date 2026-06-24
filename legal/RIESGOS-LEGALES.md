@@ -10,8 +10,8 @@ Contexto: propietario en España → aplica **RGPD** (UE) y **LOPDGDD**. Si hay 
 
 ### R-L1 — Ubicación pública (exacta por defecto)
 La ubicación precisa pública es un **dato de geolocalización sensible** y un riesgo real de **acoso/stalking**. El RGPD exige minimización de datos y privacy-by-design/by-default (art. 25).
-- **Problema:** el default `exact` puede chocar con "privacidad por defecto".
-- **Recomendación legal/producto:** que el valor por defecto sea **`city`** o que `exact` exija un **consentimiento explícito y separado** (opt-in), no activado de fábrica. Implementado el mecanismo (`location_sharing`), falta decidir el default y el flujo de consentimiento. **Decisión del propietario + revisión legal.**
+- **Resuelto (parcial):** el default pasa a **`city`** (migración 009) → privacidad por defecto. La ubicación exacta es ahora opt-in explícito desde el perfil.
+- Pendiente: registrar el consentimiento de `exact` de forma auditable cuando el usuario lo active.
 - Mitigaciones ya presentes: opt-out, solo-ciudad, off; aviso en la pantalla de permisos.
 
 ### R-L2 — Transferencia internacional de datos

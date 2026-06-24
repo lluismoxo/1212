@@ -28,11 +28,11 @@
       "expo-secure-store",
       "expo-camera",
       "expo-image-picker",
-      "expo-location",
-      "expo-apple-authentication"
+      "expo-location"
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:8787"
+      "apiBaseUrl": "http://localhost:8787",
+      "googleClientId": ""
     }
   }
 }
