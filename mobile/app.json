@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "1212",
+    "slug": "1212",
+    "scheme": "app1212",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#070707"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.luismoxo.app1212",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Para tu foto de perfil y capturar los momentos de tu evolución.",
+        "NSPhotoLibraryUsageDescription": "Para elegir tu foto de perfil desde la galería.",
+        "NSLocationWhenInUseUsageDescription": "Para aparecer en el mapa global y descubrir a otros cerca de ti. Tu ubicación será pública."
+      }
+    },
+    "android": {
+      "package": "com.luismoxo.app1212",
+      "permissions": ["CAMERA", "READ_MEDIA_IMAGES", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-location",
+      "expo-apple-authentication"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:8787"
+    }
+  }
+}

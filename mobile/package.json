@@ -1,0 +1,36 @@
+{
+  "name": "1212-mobile",
+  "version": "0.0.1",
+  "private": true,
+  "main": "expo-router/entry",
+  "description": "App móvil 1212 (Expo + expo-router). Consume la API de ../app/api.",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "expo-constants": "~17.0.0",
+    "expo-linking": "~7.0.0",
+    "expo-secure-store": "~14.0.0",
+    "expo-status-bar": "~2.0.0",
+    "expo-camera": "~16.0.0",
+    "expo-image-picker": "~16.0.0",
+    "expo-location": "~18.0.0",
+    "expo-auth-session": "~6.0.0",
+    "expo-web-browser": "~14.0.0",
+    "expo-apple-authentication": "~7.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~4.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.12",
+    "typescript": "~5.3.3"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "1212-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "API de 1212 — Node + Hono + Drizzle + Neon (Postgres).",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate": "node --env-file=.env node_modules/.bin/tsx src/db/migrate.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "hono": "^4.6.0",
+    "jose": "^5.10.0",
+    "postgres": "^3.4.5",
+    "zod": "^3.23.0"
+  },
+  "optionalDependencies": {
+    "@aws-sdk/client-s3": "^3.700.0",
+    "@aws-sdk/s3-request-presigner": "^3.700.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
