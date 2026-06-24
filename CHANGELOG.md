@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Frontend Expo + Fase 5: permisos de dispositivo (2026-06-24)
+- Proyecto **Expo (SDK 52, expo-router)** en `mobile/` (Camino A: app nueva que consume la API).
+- Pantallas conectadas a la API: splash/enrutado, auth (Google/Apple), onboarding, **permissions**, home, habits, tasks, journal.
+- `lib/api.ts`: cliente con tokens en SecureStore + **auto-refresh** al 401. `state/auth.tsx`: sesión. `theme/tokens.ts`: colores + 9 niveles del prototipo.
+- **Fase 5**: `services/permissions.ts` + `permissions.tsx` — permisos contextuales (cámara/fotos/localización), todos los estados (granted/denied/limited/undetermined), guía a Ajustes al rechazar, mínimo acceso. Ubicación **avisa que será pública** antes de pedir consentimiento.
+- Typecheck limpio; `expo config` válido. Doc `10-frontend-permisos.md`, `mobile/README.md`.
+
 ### Security — Fase 6: Auditoría de seguridad (2026-06-24)
 - **Eliminado `drizzle-orm`** (advisory SQLi por identificadores; no se usaba — queries raw parametrizadas) → **producción con 0 vulnerabilidades**.
 - Añadido `secureHeaders` (CSP, HSTS, nosniff, X-Frame), `bodyLimit` 256KB, **rate limit global** 120/min, `onError` genérico (no filtra stack traces).
