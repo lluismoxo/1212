@@ -7,7 +7,7 @@ import * as mod from "./moderation/service.js";
 import * as admin from "./admin/service.js";
 import * as analytics from "./analytics/service.js";
 
-const hasDb = !!process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost");
+const hasDb = !!process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith("postgres");
 const d = hasDb ? describe.sequential : describe.skip;
 
 let owner = "", member = "", outsider = "";

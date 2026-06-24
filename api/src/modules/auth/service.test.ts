@@ -12,7 +12,8 @@ import type { VerifiedIdentity } from "../../lib/oidc.js";
 // Integración contra Neon. Requiere DATABASE_URL + JWT_SECRET.
 // Cada test crea su propia identidad (aislada) y limpia al final.
 
-const hasDb = !!process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost");
+// Requiere una DB real (Neon o Postgres CI). Se salta si no hay DATABASE_URL.
+const hasDb = !!process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith("postgres");
 const d = hasDb ? describe.sequential : describe.skip;
 
 function newIdentity(tag: string): VerifiedIdentity {

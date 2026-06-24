@@ -4,6 +4,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 9: Calidad (CI, entornos, deploy, rollback) (2026-06-24)
+- **GitHub Actions** (`.github/workflows/ci.yml`): job `api` (Postgres+PostGIS efímero → typecheck + migraciones + 29 tests + audit prod) y job `mobile` (typecheck). En cada push/PR.
+- Tests de integración detectan la DB por `DATABASE_URL` (ya no excluyen localhost) → corren en CI sobre Postgres limpio.
+- Doc `11-calidad-ci-deploy.md`: gate de calidad, entornos (local/CI/staging/prod), deploy (Fly/Railway + EAS) y **rollback** (releases + migraciones aditivas + OTA).
+- Limpieza: script `lint` huérfano → `typecheck`. Lockfiles verificados (`npm ci`).
+
 ### Added — Fase 7: Privacidad y legal (2026-06-24)
 - Documentos en `legal/`: privacy-policy, terms-of-service, retención, eliminación-cuenta, índice.
 - **`legal/RIESGOS-LEGALES.md`**: riesgos RGPD detectados (ubicación exacta por defecto, DB en EE.UU., menores, consentimiento granular) con acciones recomendadas.

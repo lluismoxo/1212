@@ -8,7 +8,7 @@ import * as habits from "./habits/service.js";
 import * as tasks from "./tasks/service.js";
 import * as journal from "./journal/service.js";
 
-const hasDb = !!process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost");
+const hasDb = !!process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith("postgres");
 const d = hasDb ? describe.sequential : describe.skip;
 
 let uid = "";

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  # ── API: typecheck + tests de integración contra Postgres+PostGIS efímero ──
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: app1212
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/app1212"
+      JWT_SECRET: "ci-secret-larguísimo-para-tests-1234567890"
+      NODE_ENV: "test"
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Migrate
+        run: npx tsx src/db/migrate.ts
+      - name: Test
+        run: npx vitest run
+      - name: Audit (solo producción)
+        run: npm audit --omit=dev --audit-level=high
+
+  # ── Mobile: typecheck ──
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
