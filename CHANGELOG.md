@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Fase 7: Privacidad y legal (2026-06-24)
+- Documentos en `legal/`: privacy-policy, terms-of-service, retención, eliminación-cuenta, índice.
+- **`legal/RIESGOS-LEGALES.md`**: riesgos RGPD detectados (ubicación exacta por defecto, DB en EE.UU., menores, consentimiento granular) con acciones recomendadas.
+- Reflejan los requisitos de negocio: no venta de datos, perfiles públicos, ubicación pública con control del usuario, acceso admin interno (diario excluido).
+- **Pantalla de consentimiento** `mobile/app/consent.tsx`: informa qué datos son públicos antes de pedir permisos; onboarding → consent → permissions.
+- Avisos: documentos son borradores técnicos, requieren revisión legal. Typecheck mobile limpio.
+
 ### Added — Frontend Expo + Fase 5: permisos de dispositivo (2026-06-24)
 - Proyecto **Expo (SDK 52, expo-router)** en `mobile/` (Camino A: app nueva que consume la API).
 - Pantallas conectadas a la API: splash/enrutado, auth (Google/Apple), onboarding, **permissions**, home, habits, tasks, journal.

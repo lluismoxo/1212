@@ -26,12 +26,12 @@ export default function Onboarding() {
       </View>
       <View style={styles.actions}>
         {last ? (
-          <Pressable style={styles.btn} onPress={() => router.replace("/permissions")}>
+          <Pressable style={styles.btn} onPress={() => router.replace("/consent")}>
             <Text style={styles.btnTxt}>Empezar</Text>
           </Pressable>
         ) : (
           <View style={styles.row}>
-            <Pressable onPress={() => router.replace("/permissions")}>
+            <Pressable onPress={() => router.replace("/consent")}>
               <Text style={styles.skip}>Saltar</Text>
             </Pressable>
             <Pressable style={styles.btnSmall} onPress={() => setStep((s) => s + 1)}>
