@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, Alert, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert, Image, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/state/auth";
@@ -8,6 +8,7 @@ import { Crystal } from "@/components/Crystal";
 
 interface FullProfile {
   username: string; display_name: string; bio: string | null; city: string | null;
+  avatar_url: string | null;
   location_sharing: "exact" | "city" | "off";
 }
 
@@ -28,6 +29,25 @@ export default function Profile() {
   async function setSharing(value: "exact" | "city" | "off") {
     await api("/profiles/me", { method: "PATCH", body: { locationSharing: value } });
     setP((x) => (x ? { ...x, location_sharing: value } : x));
+  }
+
+  // MVP: avatar por URL (sin storage propio). Más adelante → subida a R2.
+  function editAvatar() {
+    Alert.prompt?.(
+      "Foto de perfil",
+      "Pega la URL de una imagen (https://…)",
+      async (url) => {
+        if (!url) return;
+        try {
+          await api("/profiles/me", { method: "PATCH", body: { avatarUrl: url } });
+          setP((x) => (x ? { ...x, avatar_url: url } : x));
+        } catch {
+          Alert.alert("Error", "URL no válida.");
+        }
+      },
+      "plain-text",
+      p?.avatar_url ?? "",
+    );
   }
 
   function confirmDelete() {
@@ -60,7 +80,14 @@ export default function Profile() {
       </View>
 
       <View style={styles.top}>
-        <Crystal level={lv} size={90} />
+        <Pressable onPress={editAvatar}>
+          {p?.avatar_url ? (
+            <Image source={{ uri: p.avatar_url }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarEmpty}><Crystal level={lv} size={70} /></View>
+          )}
+          <Text style={styles.editAvatar}>Cambiar foto</Text>
+        </Pressable>
         <Text style={styles.name}>{p?.display_name ?? "—"}</Text>
         <Text style={styles.handle}>@{p?.username}</Text>
         <Text style={styles.levelTxt}>Nivel {lv.n} · {lv.name}</Text>
@@ -106,6 +133,9 @@ const styles = StyleSheet.create({
   back: { color: "#fff", fontSize: 30 },
   title: { color: "#fff", fontSize: 16, fontWeight: "600" },
   top: { alignItems: "center", gap: 6, paddingVertical: 20 },
+  avatar: { width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: colors.gold },
+  avatarEmpty: { width: 90, height: 90, borderRadius: 45, alignItems: "center", justifyContent: "center", backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+  editAvatar: { color: colors.textMuted, fontSize: 12, textAlign: "center", marginTop: 6 },
   name: { fontSize: 22, fontWeight: "700", color: "#fff", marginTop: 8 },
   handle: { fontSize: 14, color: colors.textMuted },
   levelTxt: { fontSize: 14, color: colors.gold },

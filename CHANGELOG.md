@@ -4,6 +4,13 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Changed — Simplificación MVP (2026-06-24)
+- **Login solo Google** en la app: Apple retirado del flujo (cuenta dev de pago). `auth.tsx` cableado con `expo-auth-session` (funciona al poner `googleClientId` en `app.json`). Backend mantiene Apple por si se reactiva.
+- **Avatar por URL** (MVP sin storage propio): en perfil, pegar URL de imagen → `avatar_url`. Más adelante, subida a R2.
+- **Default de ubicación → `city`** (migración 009): privacidad por defecto; `exact` pasa a ser opt-in explícito. Resuelve parte del riesgo legal R-L1.
+- Doc `13-neon-region-ue.md`: guía para mover la DB a región UE (R-L2). Quitada dep `expo-apple-authentication`.
+- 29 tests verde; typecheck mobile limpio.
+
 ### Added — Pantallas mobile restantes (2026-06-24)
 - **levels** (9 niveles + componente `Crystal` SVG, desbloqueo por nivel actual).
 - **profile**: perfil propio, control de **ubicación pública** (exact/city/off), cerrar sesión, **eliminar cuenta** (con confirmación).

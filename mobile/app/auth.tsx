@@ -1,43 +1,49 @@
-import { useState } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, Platform } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
-import * as AppleAuthentication from "expo-apple-authentication";
+import Constants from "expo-constants";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
 import { login } from "@/lib/api";
 import { useAuth } from "@/state/auth";
 import { colors } from "@/theme/tokens";
 
+WebBrowser.maybeCompleteAuthSession();
+
+// MVP: solo login con Google. Apple se añade más adelante (requiere cuenta dev de pago).
 export default function Auth() {
   const { refresh } = useAuth();
   const [busy, setBusy] = useState(false);
+  const clientId = Constants.expoConfig?.extra?.googleClientId as string | undefined;
 
-  async function afterLogin() {
-    await refresh();
-    router.replace("/onboarding");
-  }
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: clientId ?? "",
+  });
 
-  async function onApple() {
-    try {
-      setBusy(true);
-      const cred = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      if (!cred.identityToken) throw new Error("sin id_token");
-      await login("apple", cred.identityToken);
-      await afterLogin();
-    } catch (e: any) {
-      if (e?.code !== "ERR_REQUEST_CANCELED") Alert.alert("Error", "No se pudo iniciar sesión con Apple.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  useEffect(() => {
+    (async () => {
+      if (response?.type !== "success") return;
+      const idToken = response.params.id_token;
+      if (!idToken) return;
+      try {
+        setBusy(true);
+        await login("google", idToken);
+        await refresh();
+        router.replace("/onboarding");
+      } catch {
+        Alert.alert("Error", "No se pudo iniciar sesión.");
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [response]);
 
   function onGoogle() {
-    // Flujo Google con expo-auth-session: requiere GOOGLE_CLIENT_ID configurado.
-    // Se cablea cuando estén las credenciales (ver docs/06-oauth-setup.md).
-    Alert.alert("Google", "Configura GOOGLE_CLIENT_ID para habilitar el login con Google.");
+    if (!clientId) {
+      Alert.alert("Google", "Configura googleClientId en app.json para habilitar el login.");
+      return;
+    }
+    promptAsync();
   }
 
   return (
@@ -47,14 +53,9 @@ export default function Auth() {
         <Text style={styles.sub}>Tu camino de evolución empieza aquí</Text>
       </View>
       <View style={styles.actions}>
-        <Pressable style={[styles.btn, styles.btnWhite]} onPress={onGoogle} disabled={busy}>
-          <Text style={styles.btnWhiteTxt}>Continuar con Google</Text>
+        <Pressable style={styles.btn} onPress={onGoogle} disabled={busy || !request}>
+          <Text style={styles.btnTxt}>Continuar con Google</Text>
         </Pressable>
-        {Platform.OS === "ios" && (
-          <Pressable style={[styles.btn, styles.btnDark]} onPress={onApple} disabled={busy}>
-            <Text style={styles.btnDarkTxt}>Continuar con Apple</Text>
-          </Pressable>
-        )}
         <Text style={styles.legal}>
           Al continuar aceptas los Términos y la Política de Privacidad de 1212.
         </Text>
@@ -69,10 +70,7 @@ const styles = StyleSheet.create({
   logo: { fontSize: 26, fontWeight: "600", letterSpacing: 8, color: "#fff", paddingLeft: 8 },
   sub: { fontSize: 14, color: colors.textMuted, marginTop: 6 },
   actions: { padding: 28, paddingBottom: 46, gap: 12 },
-  btn: { height: 56, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  btnWhite: { backgroundColor: "#fff" },
-  btnWhiteTxt: { color: "#0b0b0b", fontSize: 15, fontWeight: "600" },
-  btnDark: { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" },
-  btnDarkTxt: { color: "#fff", fontSize: 15, fontWeight: "600" },
+  btn: { height: 56, borderRadius: 18, backgroundColor: "#fff", alignItems: "center", justifyContent: "center" },
+  btnTxt: { color: "#0b0b0b", fontSize: 15, fontWeight: "600" },
   legal: { marginTop: 14, fontSize: 12, lineHeight: 18, color: "rgba(255,255,255,0.32)", textAlign: "center" },
 });
