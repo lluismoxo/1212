@@ -4,11 +4,12 @@ import { router } from "expo-router";
 import { api } from "@/lib/api";
 import { useAuth } from "@/state/auth";
 import { colors, LEVELS } from "@/theme/tokens";
+import { Crystal } from "@/components/Crystal";
 
 interface LevelInfo { current_level: number; progress: number; }
 
 export default function Home() {
-  const { me, signOut } = useAuth();
+  const { me } = useAuth();
   const [level, setLevel] = useState<LevelInfo | null>(null);
   const [streak, setStreak] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,16 +49,17 @@ export default function Home() {
           <Text style={styles.welcome}>Bienvenido</Text>
           <Text style={styles.name}>{me?.display_name ?? "—"}</Text>
         </View>
-        <Pressable onPress={signOut}><Text style={styles.signout}>Salir</Text></Pressable>
+        <Pressable onPress={() => router.push("/profile")}><Text style={styles.signout}>Perfil</Text></Pressable>
       </View>
 
-      <View style={styles.hero}>
+      <Pressable style={styles.hero} onPress={() => router.push("/levels")}>
+        <Crystal level={lv} size={120} />
         <Text style={styles.levelTag}>NIVEL {lv.n}</Text>
         <Text style={styles.levelName}>{lv.name}</Text>
         <View style={styles.barBg}>
           <View style={[styles.barFill, { width: `${level?.progress ?? 0}%`, backgroundColor: lv.aura }]} />
         </View>
-      </View>
+      </Pressable>
 
       <Text style={styles.section}>Resumen del día</Text>
       <View style={styles.cards}>
@@ -68,6 +70,11 @@ export default function Home() {
         <Quick label="Hábitos" onPress={() => router.push("/habits")} />
         <Quick label="Tareas" onPress={() => router.push("/tasks")} />
         <Quick label="Diario" onPress={() => router.push("/journal")} />
+      </View>
+      <View style={[styles.grid, { marginTop: 10 }]}>
+        <Quick label="Comunidad" onPress={() => router.push("/communities")} />
+        <Quick label="Mapa" onPress={() => router.push("/map")} />
+        <Quick label="Buscar" onPress={() => router.push("/search")} />
       </View>
     </ScrollView>
   );
