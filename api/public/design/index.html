@@ -3,11 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- React + ReactDOM (requeridos por support.js; Claude Design los inyecta en el editor) -->
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="./support.js"></script>
-<script src="./bridge.js"></script>
 </head>
 <body>
 <x-dc>
@@ -1363,67 +1359,6 @@ class Component extends DCLogic {
     ]);
   }
 }
-</script>
-
-<!-- Conector con el backend real. Intercepta acciones del diseño por
-     delegación de eventos (sobrevive a los re-render del runtime). -->
-<script>
-(function () {
-  function byText(t) {
-    var bs = document.querySelectorAll('button');
-    for (var i = 0; i < bs.length; i++) {
-      if (bs[i].textContent.trim().indexOf(t) === 0) return bs[i];
-    }
-    return null;
-  }
-
-  // Login/registro real con email cuando el usuario pulsa los botones de auth.
-  async function doAuth(mode) {
-    try {
-      var email = window.prompt(mode === 'register' ? 'Crea tu cuenta — email:' : 'Email:');
-      if (!email) return false;
-      var pass = window.prompt('Contraseña (mín. 8):');
-      if (!pass) return false;
-      if (mode === 'register') {
-        var name = window.prompt('Tu nombre:') || 'Usuario';
-        await window.API.register(email.trim(), pass, name.trim());
-      } else {
-        await window.API.login(email.trim(), pass);
-      }
-      return true;
-    } catch (e) {
-      window.alert(e.code === 'email_taken' ? 'Ese email ya existe.' :
-        e.code === 'invalid_credentials' ? 'Email o contraseña incorrectos.' :
-        'No se pudo iniciar sesión.');
-      return false;
-    }
-  }
-
-  // Delegación: capturamos los botones de la pantalla de auth.
-  document.addEventListener('click', async function (ev) {
-    var b = ev.target.closest && ev.target.closest('button');
-    if (!b) return;
-    var txt = b.textContent.trim();
-    if (txt.indexOf('Continuar con Google') === 0 || txt.indexOf('Continuar con Apple') === 0) {
-      // por ahora ambos = login/registro por email real
-      ev.stopPropagation();
-      var ok = await doAuth(window.__authMode || 'login');
-      if (ok) {
-        // deja que el diseño avance (su onClick original navega a perfil/home)
-        window.__loggedIn = true;
-      } else {
-        // bloquea el avance si falló
-        ev.preventDefault();
-      }
-    }
-    // recordar si venía de "Crear cuenta" o "Iniciar sesión"
-    if (txt === 'Crear cuenta') window.__authMode = 'register';
-    if (txt === 'Iniciar sesión') window.__authMode = 'login';
-  }, true);
-
-  // marca de vida para depurar
-  window.__bridgeReady = true;
-})();
 </script>
 </body>
 </html>

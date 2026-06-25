@@ -8,7 +8,7 @@ import Constants from "expo-constants";
 // embebemos a pantalla completa. La conexión con datos del backend se inyecta
 // progresivamente (siguiente paso).
 const API = (Constants.expoConfig?.extra?.apiBaseUrl as string) ?? "http://localhost:8787";
-const DESIGN_URL = `${API}/app/index.html`;
+const DESIGN_URL = `${API}/design/index.html`;
 
 export default function App() {
   const ref = useRef<WebView>(null);
