@@ -12,6 +12,9 @@ import {
   deleteAccount,
   AuthError,
 } from "./service.js";
+import {
+  registerWithPassword, loginWithPassword, requestPasswordReset, resetPassword,
+} from "./password.js";
 
 export const authRoutes = new Hono();
 
@@ -48,6 +51,74 @@ authRoutes.post(
     }
   },
 );
+
+// ── Email + contraseña ────────────────────────────────────────
+const registerBody = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(200),
+  name: z.string().min(1).max(60),
+});
+authRoutes.post(
+  "/register",
+  rateLimit({ windowMs: 60_000, max: 5, scope: "register" }),
+  async (c) => {
+    const b = registerBody.safeParse(await c.req.json().catch(() => null));
+    if (!b.success) return c.json({ error: "bad_request" }, 400);
+    try {
+      return c.json(await registerWithPassword(b.data.email, b.data.password, b.data.name, meta(c)));
+    } catch (e) {
+      if (e instanceof AuthError) return c.json({ error: e.code }, 409);
+      return c.json({ error: "auth_failed" }, 400);
+    }
+  },
+);
+
+const passwordLoginBody = z.object({ email: z.string().email(), password: z.string().min(1) });
+authRoutes.post(
+  "/login-password",
+  rateLimit({ windowMs: 60_000, max: 10, scope: "login-pw" }),
+  async (c) => {
+    const b = passwordLoginBody.safeParse(await c.req.json().catch(() => null));
+    if (!b.success) return c.json({ error: "bad_request" }, 400);
+    try {
+      return c.json(await loginWithPassword(b.data.email, b.data.password, meta(c)));
+    } catch (e) {
+      if (e instanceof AuthError) return c.json({ error: e.code }, 401);
+      return c.json({ error: "auth_failed" }, 401);
+    }
+  },
+);
+
+authRoutes.post(
+  "/forgot-password",
+  rateLimit({ windowMs: 60_000, max: 5, scope: "forgot" }),
+  async (c) => {
+    const b = z.object({ email: z.string().email() }).safeParse(await c.req.json().catch(() => null));
+    if (!b.success) return c.json({ error: "bad_request" }, 400);
+    const token = await requestPasswordReset(b.data.email);
+    // TODO: enviar el token por email cuando haya proveedor de correo.
+    // Respuesta uniforme (no revela si el email existe).
+    return c.json({ ok: true, ...(getDevToken(token)) });
+  },
+);
+
+authRoutes.post("/reset-password", async (c) => {
+  const b = z.object({ token: z.string().min(10), password: z.string().min(8).max(200) })
+    .safeParse(await c.req.json().catch(() => null));
+  if (!b.success) return c.json({ error: "bad_request" }, 400);
+  try {
+    await resetPassword(b.data.token, b.data.password);
+    return c.json({ ok: true });
+  } catch (e) {
+    if (e instanceof AuthError) return c.json({ error: e.code }, 400);
+    return c.json({ error: "auth_failed" }, 400);
+  }
+});
+
+// En desarrollo, devuelve el token de reset en la respuesta (no hay email aún).
+function getDevToken(token: string | null) {
+  return process.env.NODE_ENV !== "production" && token ? { devResetToken: token } : {};
+}
 
 const refreshBody = z.object({ refreshToken: z.string().min(10) });
 

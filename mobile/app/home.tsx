@@ -20,11 +20,9 @@ export default function Home() {
       setStreak(st.streak);
     } catch {}
     try {
-      // nivel desde el perfil público propio (incluye level)
-      if (me?.username) {
-        const pub = await api<{ level: LevelInfo }>(`/profiles/${me.username}`, { auth: false }).catch(() => null);
-        if (pub?.level) setLevel(pub.level);
-      }
+      // nivel propio recalculado server-side
+      const lv = await api<LevelInfo>("/levels/me");
+      setLevel(lv);
     } catch {}
   }
 

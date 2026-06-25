@@ -7,5 +7,6 @@ export default defineConfig({
     pool: "forks",
     poolOptions: { forks: { singleFork: true } },
     fileParallelism: false,
+    testTimeout: 20000, // tests de integración contra Neon (latencia de red)
   },
 });

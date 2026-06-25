@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../../middleware/auth.js";
 import {
-  listHabits, createHabit, archiveHabit, setHabitLog, weekLogs, currentStreak,
-  NotFoundError,
+  listHabits, createHabit, renameHabit, archiveHabit, setHabitLog,
+  weekLogs, todayLogs, currentStreak, NotFoundError,
 } from "./service.js";
 
 export const habitRoutes = new Hono();
@@ -23,6 +23,13 @@ habitRoutes.post("/", requireAuth, async (c) => {
   return c.json(await createHabit(c.get("user").sub, b.data.name, b.data.icon), 201);
 });
 
+habitRoutes.patch("/:id", requireAuth, async (c) => {
+  const b = z.object({ name: z.string().min(1).max(80) }).safeParse(await c.req.json().catch(() => null));
+  if (!b.success) return c.json({ error: "bad_request" }, 400);
+  try { return c.json(await renameHabit(c.get("user").sub, c.req.param("id")!, b.data.name)); }
+  catch (e) { return nf(e, c); }
+});
+
 habitRoutes.delete("/:id", requireAuth, async (c) => {
   try {
     await archiveHabit(c.get("user").sub, c.req.param("id")!);
@@ -30,14 +37,19 @@ habitRoutes.delete("/:id", requireAuth, async (c) => {
   } catch (e) { return nf(e, c); }
 });
 
+// marcar/desmarcar HOY (la fecha la pone el servidor; no se aceptan días arbitrarios)
 habitRoutes.put("/:id/log", requireAuth, async (c) => {
-  const b = z.object({ date: DATE, done: z.boolean() }).safeParse(await c.req.json().catch(() => null));
+  const b = z.object({ done: z.boolean() }).safeParse(await c.req.json().catch(() => null));
   if (!b.success) return c.json({ error: "bad_request" }, 400);
   try {
-    await setHabitLog(c.get("user").sub, c.req.param("id")!, b.data.date, b.data.done);
+    await setHabitLog(c.get("user").sub, c.req.param("id")!, b.data.done);
     return c.json({ ok: true });
   } catch (e) { return nf(e, c); }
 });
+
+// estado de hoy: ids de hábitos ya marcados
+habitRoutes.get("/today", requireAuth, async (c) =>
+  c.json(await todayLogs(c.get("user").sub)));
 
 habitRoutes.get("/logs", requireAuth, async (c) => {
   const q = z.object({ from: DATE, to: DATE }).safeParse(c.req.query());

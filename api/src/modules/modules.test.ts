@@ -77,18 +77,23 @@ d("módulos Fase 4 (integración)", () => {
     await expect(location.upsertLocation(uid, 999, 0)).rejects.toBeInstanceOf(location.ValidationError);
   });
 
-  it("habits: crear, marcar, racha", async () => {
+  it("habits: crear, marcar hoy, hoy-logs, racha", async () => {
     const h = await habits.createHabit(uid, "Meditar");
-    await habits.setHabitLog(uid, h.id, "2026-06-22", true);
-    await habits.setHabitLog(uid, h.id, "2026-06-21", true);
-    const week = await habits.weekLogs(uid, "2026-06-16", "2026-06-22");
-    expect(week.length).toBeGreaterThanOrEqual(2);
+    await habits.setHabitLog(uid, h.id, true); // marca HOY (fecha servidor)
+    const today = await habits.todayLogs(uid) as any[];
+    expect(today.find((t) => t.habit_id === h.id)).toBeTruthy();
+    // desmarcar
+    await habits.setHabitLog(uid, h.id, false);
+    const today2 = await habits.todayLogs(uid) as any[];
+    expect(today2.find((t) => t.habit_id === h.id)).toBeFalsy();
     expect(typeof (await habits.currentStreak(uid))).toBe("number");
   });
 
-  it("habits: no puedo marcar hábito de otro", async () => {
+  it("habits: rename + no puedo marcar hábito de otro", async () => {
     const h = await habits.createHabit(uid2, "Ajeno");
-    await expect(habits.setHabitLog(uid, h.id, "2026-06-22", true))
+    const r = await habits.renameHabit(uid2, h.id, "Renombrado");
+    expect(r.name).toBe("Renombrado");
+    await expect(habits.setHabitLog(uid, h.id, true))
       .rejects.toBeInstanceOf(habits.NotFoundError);
   });
 

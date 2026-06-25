@@ -4,6 +4,15 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Fixed — Correcciones de la auditoría funcional (2026-06-24)
+- **Motor de niveles (regla central, antes inexistente):** migración 010 con `month_compliance()` y `recalc_level()`; sube de nivel solo con ≥70% de hábitos en un mes natural completo. Si el usuario entra a mitad de mes, esa fracción no cuenta (empieza el día 1 del mes siguiente, `level_tracking_since`). Endpoint `GET /levels/me` (recalcula server-side; el cliente no puede escribir el nivel). 5 tests (69/70/71%, idempotencia, sin bypass).
+- **7 comunidades iniciales sembradas** (migración 011): CONSULTORÍA, IA, ECOMMERCE, MARCA PERSONAL, CREACIÓN DE CONTENIDO, FINANZAS, RESELLING.
+- **Tareas "del día" reales:** la fecha la fija el servidor; al listar se purgan las de días anteriores (sin histórico).
+- **Hábitos:** la fecha del log la fija el servidor (no se pueden registrar días pasados → no se infla el %). Nuevos endpoints `GET /habits/today`, `PATCH /habits/:id` (renombrar). UI con marcar/desmarcar, eliminar y % del mes.
+- **Login email + contraseña + recuperación** (migración 012): `/auth/register`, `/login-password`, `/forgot-password`, `/reset-password` (bcrypt, tokens hasheados, revoca sesiones al cambiar). 4 tests. UI de auth con email/contraseña + Google.
+- Home y Niveles leen el nivel desde `/levels/me` (no por la ruta pública).
+- **38 tests** (antes 29) contra Neon, verde. E2E manual verificado: registro→hábito→nivel→comunidades.
+
 ### Changed — Simplificación MVP (2026-06-24)
 - **Login solo Google** en la app: Apple retirado del flujo (cuenta dev de pago). `auth.tsx` cableado con `expo-auth-session` (funciona al poner `googleClientId` en `app.json`). Backend mantiene Apple por si se reactiva.
 - **Avatar por URL** (MVP sin storage propio): en perfil, pegar URL de imagen → `avatar_url`. Más adelante, subida a R2.
