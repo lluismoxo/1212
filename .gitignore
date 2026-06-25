@@ -16,3 +16,11 @@ supabase/.temp/
 node_modules/
 .expo/
 dist/
+
+# Herramientas de verificación local (Playwright para screenshots; no son del proyecto)
+/package.json
+/package-lock.json
+api/_shot*.mjs
+
+# Estado del editor Claude Design (no aplica fuera del editor)
+api/public/design/.image-slots.state.json
