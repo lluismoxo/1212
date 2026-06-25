@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { bodyLimit } from "hono/body-limit";
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { getEnv } from "./config/env.js";
 import { rateLimit } from "./middleware/rateLimit.js";
 import { authRoutes } from "./modules/auth/routes.js";
@@ -20,6 +21,10 @@ import { mediaRoutes } from "./modules/media/routes.js";
 
 const env = getEnv();
 const app = new Hono();
+
+// El diseño (prototipo Claude Design) se sirve estático en /design.
+// Va ANTES de secureHeaders: usa estilos/scripts inline que la CSP bloquearía.
+app.use("/design/*", serveStatic({ root: "./public" }));
 
 // Cabeceras de seguridad (CSP, X-Frame, nosniff, HSTS en prod, etc.)
 app.use("*", secureHeaders());

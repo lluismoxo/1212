@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- React + ReactDOM (requeridos por support.js; Claude Design los inyecta en el editor) -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<script src="image-slot.js"></script>
+<script src="https://unpkg.com/globe.gl@2.32.0/dist/globe.gl.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#050506}
+  ::-webkit-scrollbar{width:0;height:0}
+  .vp{-ms-overflow-style:none;scrollbar-width:none}
+  input{font-family:inherit}
+  input::placeholder{color:rgba(255,255,255,.3)}
+  @keyframes screenIn{from{transform:translateY(14px)}to{transform:none}}
+  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:.92}}
+  @keyframes flashUp{0%{opacity:0;transform:scale(.5)}45%{opacity:.85}100%{opacity:0;transform:scale(2)}}
+  @keyframes sheetUp{from{transform:translateY(110%)}to{transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes pulseRing{0%{transform:scale(.7);opacity:.6}100%{transform:scale(2);opacity:0}}
+  @keyframes dotTwinkle{0%,100%{opacity:.25}50%{opacity:.9}}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  @keyframes riseFade{from{transform:translateY(10px)}to{transform:none}}
+  @keyframes lvShimmer{0%,100%{filter:brightness(1.12) saturate(1.05)}50%{filter:brightness(1.45) saturate(1.18)}}
+  @keyframes lgPulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,0);filter:brightness(1)}26%{box-shadow:0 0 26px 7px rgba(255,255,255,.5),inset 0 0 16px rgba(255,255,255,.6);filter:brightness(1.4)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0);filter:brightness(1)}}
+  @keyframes lgWave{0%{opacity:.9;transform:scale(.55)}100%{opacity:0;transform:scale(1.9)}}
+  .lg{position:relative;-webkit-tap-highlight-color:transparent}
+  .lg-on{animation:lgPulse .55s ease-out}
+  .glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.05) 50%,rgba(255,255,255,.03))!important;backdrop-filter:blur(18px) saturate(1.5) brightness(1.1);-webkit-backdrop-filter:blur(18px) saturate(1.5) brightness(1.1);border:1px solid rgba(255,255,255,.22)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -12px 26px -10px rgba(255,255,255,.10),0 14px 34px -14px rgba(0,0,0,.5)}
+  .glass::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.05) 36%,transparent 58%)}
+  .glass::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.28),inset 0 0 20px -6px rgba(255,255,255,.18)}
+  .glass>*{position:relative;z-index:1}
+  image-slot[data-coverdisplay]::part(frame){background:transparent}
+  image-slot[data-coverdisplay]::part(ring){display:none}
+  image-slot[data-coverdisplay]::part(empty){display:none}
+</style>
+</helmet>
+
+<div style="--gold:{{ accent }};--lvl:{{ levelAura }};min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(120% 80% at 50% 22%,#101014 0%,#060607 60%,#040405 100%);padding:30px;font-family:'Satoshi',-apple-system,system-ui,sans-serif">
+  <div ref="{{ phoneRef }}" style="flex:none;width:393px;height:852px"><div style="position:relative;width:393px;height:852px;transform-origin:top left;border-radius:56px;background:#070707;box-shadow:0 50px 130px -30px rgba(0,0,0,.85),0 0 0 2px #0c0c0e,0 0 0 12px #161618,0 0 0 13px #2c2c30,inset 0 0 0 1px rgba(255,255,255,.04);overflow:hidden">
+
+    <!-- status bar -->
+    <div style="position:absolute;top:0;left:0;right:0;height:54px;z-index:80;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 9px;pointer-events:none">
+      <span style="color:#fff;font-size:15px;font-weight:600;letter-spacing:.2px">9:41</span>
+      <span style="display:flex;align-items:center;gap:7px">
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="#fff"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="#fff"><path d="M8.5 2.2c2.4 0 4.6.9 6.2 2.4l1.3-1.4C14 1.3 11.4.2 8.5.2S3 1.3 1 3.2L2.3 4.6C3.9 3.1 6.1 2.2 8.5 2.2zM8.5 6c1.3 0 2.5.5 3.4 1.3l1.3-1.4C11.9 4.7 10.3 4 8.5 4S5.1 4.7 3.8 5.9L5.1 7.3C6 6.5 7.2 6 8.5 6zm0 3.8L10.6 7.6C10 7 9.3 6.7 8.5 6.7s-1.5.3-2.1.9L8.5 9.8z"/></svg>
+        <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x="1" y="1" width="21" height="10" rx="3" stroke="#fff" stroke-opacity=".45"/><rect x="3" y="3" width="16" height="6" rx="1.5" fill="#fff"/><rect x="23.5" y="4" width="1.6" height="4" rx="1" fill="#fff" fill-opacity=".5"/></svg>
+      </span>
+    </div>
+    <div style="position:absolute;top:13px;left:50%;transform:translateX(-50%);width:118px;height:33px;background:#000;border-radius:20px;z-index:90"></div>
+
+    <!-- ============ SCREENS VIEWPORT ============ -->
+    <div style="position:absolute;inset:0">
+
+      <!-- SPLASH -->
+      <sc-if value="{{ s.splash }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;background:radial-gradient(70% 50% at 50% 42%,rgba(230,199,122,.08),transparent 70%),#070707">
+          <div style="position:relative;animation:floatY 7s ease-in-out infinite">
+            <div style="position:absolute;inset:-50px;background:radial-gradient(circle,rgba(230,199,122,.18),transparent 70%);filter:blur(20px)"></div>
+            {{ logoMark }}
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:10px;animation:riseFade 1s ease .3s both">
+            <span style="font-size:40px;font-weight:300;letter-spacing:14px;color:#fff;padding-left:14px">1212</span>
+            <span style="font-size:12px;font-weight:500;letter-spacing:4px;color:rgba(255,255,255,.4);text-transform:uppercase">Evoluciona</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ONBOARDING -->
+      <sc-if value="{{ s.onb }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;background:#070707;animation:screenIn .5s ease">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 36px;text-align:center;gap:38px">
+            <div style="position:relative;animation:floatY 7s ease-in-out infinite">
+              <div style="position:absolute;inset:-40px;background:radial-gradient(circle,rgba(230,199,122,.12),transparent 70%);filter:blur(24px)"></div>
+              {{ onbCrystal }}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px;max-width:300px">
+              <h1 style="margin:0;font-size:30px;font-weight:600;line-height:1.12;letter-spacing:-.5px;color:#fff;text-wrap:balance">{{ onb.title }}</h1>
+              <p style="margin:0;font-size:15px;line-height:1.55;color:rgba(255,255,255,.5);font-weight:400">{{ onb.body }}</p>
+            </div>
+          </div>
+          <div style="padding:0 28px 46px;display:flex;flex-direction:column;gap:22px">
+            <div style="display:flex;gap:8px;justify-content:center">
+              <div style="width:{{ onb.d1 }};height:6px;border-radius:3px;background:{{ onb.c1 }};transition:all .4s"></div>
+              <div style="width:{{ onb.d2 }};height:6px;border-radius:3px;background:{{ onb.c2 }};transition:all .4s"></div>
+              <div style="width:{{ onb.d3 }};height:6px;border-radius:3px;background:{{ onb.c3 }};transition:all .4s"></div>
+            </div>
+            <sc-if value="{{ onb.last }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <button onClick="{{ goAuth }}" style="height:56px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer">Crear cuenta</button>
+                <button onClick="{{ goAuth }}" style="height:52px;border:none;border-radius:18px;background:transparent;color:rgba(255,255,255,.6);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer">Iniciar sesión</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ onb.notLast }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <button onClick="{{ goAuth }}" style="border:none;background:none;color:rgba(255,255,255,.4);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer;padding:8px 0">Saltar</button>
+                <button onClick="{{ nextOnb }}" style="height:54px;padding:0 30px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px">Siguiente <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#070707" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- AUTH -->
+      <sc-if value="{{ s.auth }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;background:radial-gradient(80% 45% at 50% 8%,rgba(230,199,122,.07),transparent 60%),#070707;animation:screenIn .5s ease">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding-top:54px">
+            <div style="transform:scale(.62)">{{ logoMark }}</div>
+            <div style="text-align:center">
+              <div style="font-size:26px;font-weight:600;letter-spacing:8px;color:#fff;padding-left:8px">1212</div>
+              <div style="font-size:14px;color:rgba(255,255,255,.45);margin-top:6px">Tu camino de evolución empieza aquí</div>
+            </div>
+          </div>
+          <div style="padding:0 28px 46px;display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ goProfile }}" style="height:56px;border:none;border-radius:18px;background:#fff;color:#0b0b0b;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px">
+              <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.87h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.23c1.89-1.74 2.99-4.3 2.99-7.34z"/><path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.42l-3.23-2.5c-.9.6-2.04.95-3.39.95-2.6 0-4.81-1.76-5.6-4.13H3.06v2.59A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 13.9a6 6 0 0 1 0-3.8V7.51H3.06a10 10 0 0 0 0 8.98l3.34-2.59z"/><path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.82 1.5l2.87-2.87C16.96 2.99 14.7 2 12 2A10 10 0 0 0 3.06 7.51l3.34 2.59C7.19 7.74 9.4 5.98 12 5.98z"/></svg>
+              Continuar con Google</button>
+            <button onClick="{{ goProfile }}" style="height:56px;border:none;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;backdrop-filter:blur(10px)">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="#fff"><path d="M17.05 12.04c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.78 1.3 10.33.86 1.25 1.88 2.65 3.21 2.6 1.29-.05 1.78-.83 3.34-.83 1.55 0 2 .83 3.36.81 1.39-.03 2.27-1.27 3.12-2.53.98-1.45 1.39-2.85 1.41-2.92-.03-.01-2.71-1.04-2.74-4.13zM14.6 4.42c.71-.86 1.19-2.06 1.06-3.25-1.02.04-2.26.68-2.99 1.54-.66.76-1.23 1.98-1.08 3.14 1.14.09 2.3-.58 3.01-1.43z"/></svg>
+              Continuar con Apple</button>
+            <p style="margin:14px 6px 0;font-size:12px;line-height:1.5;color:rgba(255,255,255,.32);text-align:center">Al continuar aceptas los Términos y la Política de Privacidad de 1212.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- CREAR PERFIL -->
+      <sc-if value="{{ s.profile }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:64px 28px 36px">
+          <h1 style="margin:0;font-size:27px;font-weight:600;letter-spacing:-.4px;color:#fff">Crea tu perfil</h1>
+          <p style="margin:8px 0 28px;font-size:14px;color:rgba(255,255,255,.45)">Así te verá la comunidad.</p>
+          <div style="display:flex;justify-content:center;margin-bottom:30px">
+            <div style="position:relative">
+              <image-slot id="profileAvatar" shape="circle" placeholder="Añadir foto" style="width:112px;height:112px;display:block;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)"></image-slot>
+              <div style="position:absolute;bottom:2px;right:2px;width:32px;height:32px;border-radius:50%;background:var(--gold,#E6C77A);display:flex;align-items:center;justify-content:center;border:3px solid #070707"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#070707" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+          <label style="font-size:12px;font-weight:500;letter-spacing:.5px;color:rgba(255,255,255,.4);text-transform:uppercase">Nombre de usuario</label>
+          <input placeholder="@usuario" style="width:100%;height:54px;margin:8px 0 24px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#fff;font-size:15px;padding:0 18px;outline:none"/>
+          <label style="font-size:12px;font-weight:500;letter-spacing:.5px;color:rgba(255,255,255,.4);text-transform:uppercase">Enlaces</label>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+            {{ socialRows }}
+          </div>
+          <button onClick="{{ goPermCam }}" style="width:100%;height:56px;margin-top:30px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer">Continuar</button>
+        </div>
+      </sc-if>
+
+      <!-- PERMISO CAMARA -->
+      <sc-if value="{{ s.permCam }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;background:#070707;animation:screenIn .5s ease;padding:64px 30px 46px">
+          <div style="display:flex;justify-content:center;margin-top:30px"><span style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase">Permiso 1 de 2</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:26px">
+            <div style="width:96px;height:96px;border-radius:30px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--gold,#E6C77A)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <div style="max-width:280px"><h2 style="margin:0 0 12px;font-size:24px;font-weight:600;color:#fff">Cámara y Fotos</h2><p style="margin:0;font-size:15px;line-height:1.55;color:rgba(255,255,255,.5)">Para tu foto de perfil y capturar los momentos de tu evolución.</p></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ goPermLoc }}" style="height:56px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer">Permitir acceso</button>
+            <button onClick="{{ goPermLoc }}" style="height:50px;border:none;background:none;color:rgba(255,255,255,.45);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer">Ahora no</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- PERMISO LOCALIZACION -->
+      <sc-if value="{{ s.permLoc }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;background:#070707;animation:screenIn .5s ease;padding:64px 30px 46px">
+          <div style="display:flex;justify-content:center;margin-top:30px"><span style="font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);text-transform:uppercase">Permiso 2 de 2</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:26px">
+            <div style="width:96px;height:96px;border-radius:30px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center">
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="var(--gold,#E6C77A)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            </div>
+            <div style="max-width:280px"><h2 style="margin:0 0 12px;font-size:24px;font-weight:600;color:#fff">Localización</h2><p style="margin:0;font-size:15px;line-height:1.55;color:rgba(255,255,255,.5)">Para aparecer en el mapa global y descubrir a otros cerca de ti.</p></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <button onClick="{{ enterApp }}" style="height:56px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer">Permitir acceso</button>
+            <button onClick="{{ enterApp }}" style="height:50px;border:none;background:none;color:rgba(255,255,255,.45);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer">Ahora no</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- HOME -->
+      <sc-if value="{{ s.home }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:radial-gradient(95% 42% at 50% 0%,color-mix(in srgb, var(--lvl,#E6C77A) 12%, transparent),transparent 56%),#070707;animation:screenIn .5s ease;padding:58px 22px 120px;transition:background .6s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <image-slot id="homeAvatar" shape="circle" placeholder="" style="width:44px;height:44px;display:block;border:1px solid rgba(255,255,255,.12)"></image-slot>
+              <div><div style="font-size:13px;color:rgba(255,255,255,.45)">Bienvenido</div><div style="font-size:17px;font-weight:600;color:#fff">{{ name }}</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"><svg width="15" height="15" viewBox="0 0 24 24" fill="var(--gold,#E6C77A)"><path d="M12 2c1 3-1 4-1 6 0 1 1 2 2 2 2 0 3-2 3-2 2 2 3 4 3 7a7 7 0 0 1-14 0c0-3 2-5 3-7 1 2 2 2 2 0 0-3 2-4 2-6z"/></svg><span style="font-size:14px;font-weight:600;color:var(--gold,#E6C77A)">12</span></div>
+              <button onClick="{{ goPerfil }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg></button>
+            </div>
+          </div>
+
+          <!-- HERO: objeto protagonista, nivel debajo -->
+          <div onClick="{{ goNiveles }}" style="display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;margin:22px 0 48px">
+            <div style="animation:floatY 7s ease-in-out infinite">{{ homeCrystal }}</div>
+            <div style="font-size:12px;letter-spacing:4px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-top:10px">Nivel {{ levelNum }}</div>
+            <div style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-.7px;margin-top:4px">{{ levelName }}</div>
+            <div style="width:240px;max-width:86%;margin-top:20px">
+              <div style="height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden"><div style="height:100%;width:{{ progressW }};border-radius:4px;background:linear-gradient(90deg,var(--lvl,#E6C77A),#fff)"></div></div>
+              <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:9px">{{ progressLabel }}</div>
+            </div>
+          </div>
+
+          <!-- quick actions -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px">
+            <button onClick="{{ goHabitos }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v3M16 2v3M8.5 14.5l2 2 3.5-4"/></svg><span style="font-size:13px;font-weight:500">Hábitos</span></button>
+            <button onClick="{{ goTareas }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span style="font-size:13px;font-weight:500">Tareas</span></button>
+            <button onClick="{{ goDiario }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2z"/><path d="M10 3v18M14 8h2M14 12h2"/></svg><span style="font-size:13px;font-weight:500">Diario</span></button>
+            <button onClick="{{ goComunidad }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><circle cx="17.5" cy="7" r="2.2"/><path d="M16 13.2A5 5 0 0 1 21 18"/></svg><span style="font-size:13px;font-weight:500">Comunidad</span></button>
+            <button onClick="{{ goMapa }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg><span style="font-size:13px;font-weight:500">Mapa</span></button>
+            <button onClick="{{ goBuscar }}" class="lg glass" style="display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.04);color:#fff;font-family:inherit;cursor:pointer;text-align:left"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><span style="font-size:13px;font-weight:500">Buscar perfiles</span></button>
+          </div>
+
+          <!-- resumen del dia -->
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.3px;margin-bottom:12px">Resumen del día</div>
+          <div style="display:flex;gap:10px;margin-bottom:22px">
+            <div class="glass" style="flex:1;padding:18px 16px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:28px;font-weight:700;color:#fff">{{ habitsToday }}</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Hábitos hoy</div></div>
+            <div class="glass" style="flex:1;padding:18px 16px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:28px;font-weight:700;color:#fff">2</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Tareas restantes</div></div>
+            <div class="glass" style="flex:1;padding:18px 16px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:28px;font-weight:700;color:var(--gold,#E6C77A)">12</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Días de racha</div></div>
+          </div>
+
+          <!-- actividad reciente -->
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);letter-spacing:.3px;margin-bottom:12px">Actividad reciente</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            {{ activityRows }}
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- NIVELES -->
+      <sc-if value="{{ s.niveles }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:{{ selBg }};animation:screenIn .5s ease;padding:58px 0 120px;transition:background .6s">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 22px 6px">
+            <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <span style="font-size:16px;font-weight:600;color:#fff">Niveles</span>
+            <div style="width:40px"></div>
+          </div>
+
+          <!-- segmented -->
+          <div style="display:flex;gap:4px;margin:14px 22px 0;padding:4px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)">
+            <button onClick="{{ setCamino }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabCamino }};color:{{ tabCaminoC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Camino</button>
+            <button onClick="{{ setOrbita }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabOrbita }};color:{{ tabOrbitaC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Órbita</button>
+            <button onClick="{{ setAscenso }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabAscenso }};color:{{ tabAscensoC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Ascenso</button>
+          </div>
+
+          <!-- hero -->
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 22px 6px;position:relative">
+            <div style="position:relative;animation:floatY 7s ease-in-out infinite">
+              <div style="position:absolute;inset:-46px;background:radial-gradient(circle,{{ selGlow }},transparent 70%);filter:blur(22px);animation:glowPulse 5s ease-in-out infinite"></div>
+              {{ selCrystal }}
+              <sc-if value="{{ unlocking }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;inset:-30px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.9),transparent 60%);animation:flashUp 1.4s ease forwards;pointer-events:none"></div></sc-if>
+            </div>
+            <div style="font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-top:10px">Nivel {{ selNum }}</div>
+            <div style="font-size:28px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-top:2px">{{ selName }}</div>
+            <div style="font-size:14px;color:rgba(255,255,255,.5);max-width:260px;margin-top:8px;line-height:1.5">{{ selDesc }}</div>
+          </div>
+
+          <!-- VARIATION: CAMINO -->
+          <sc-if value="{{ viewCamino }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:18px 40px 0;position:relative">
+              {{ caminoPath }}
+            </div>
+          </sc-if>
+
+          <!-- VARIATION: ORBITA -->
+          <sc-if value="{{ viewOrbita }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:24px 22px 0;display:flex;justify-content:center">
+              {{ orbitaView }}
+            </div>
+          </sc-if>
+
+          <!-- VARIATION: ASCENSO -->
+          <sc-if value="{{ viewAscenso }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:18px 22px 0;display:flex;flex-direction:column-reverse;gap:8px">
+              {{ ascensoBars }}
+            </div>
+          </sc-if>
+
+          <div style="padding:22px 22px 0">
+            <button onClick="{{ playUnlock }}" class="lg" style="width:100%;height:54px;border:1px solid color-mix(in srgb,var(--lvl,#E6C77A) 38%,transparent);border-radius:18px;background:color-mix(in srgb,var(--lvl,#E6C77A) 12%,transparent);color:var(--lvl,#E6C77A);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V8a5 5 0 0 1 10 0"/><rect x="4" y="11" width="16" height="10" rx="2"/></svg>Vista previa de desbloqueo</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- HABITOS -->
+      <sc-if value="{{ s.habitos }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:58px 20px 120px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#fff">Hábitos</h1>
+            <button onClick="{{ openHistory }}" style="font-size:13px;color:rgba(255,255,255,.5);background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">Histórico <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:22px">Semana del 16 al 22 de junio</div>
+
+          <!-- weekly table -->
+          <div style="border-radius:24px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:16px 14px 8px">
+            <div style="display:flex;align-items:center;margin-bottom:10px">
+              <div style="flex:1"></div>
+              <div style="display:flex;gap:3px">{{ dayHeaders }}</div>
+            </div>
+            {{ habitRows }}
+          </div>
+          <button onClick="{{ openNewHabit }}" style="width:100%;height:54px;margin-top:16px;border:1px dashed rgba(255,255,255,.16);border-radius:18px;background:transparent;color:rgba(255,255,255,.6);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Crear hábito</button>
+        </div>
+      </sc-if>
+
+      <!-- TAREAS -->
+      <sc-if value="{{ s.tareas }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:58px 22px 120px">
+          <h1 style="margin:0 0 4px;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#fff">Tareas del día</h1>
+          <div style="font-size:14px;color:rgba(255,255,255,.4);margin:0 0 22px">{{ tasksLabel }}</div>
+          <div style="display:flex;gap:10px;margin-bottom:18px">
+            <input value="{{ taskDraft }}" onInput="{{ onTaskInput }}" onKeyDown="{{ onTaskKey }}" placeholder="Añadir una tarea…" style="flex:1;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#fff;font-size:15px;padding:0 18px;outline:none"/>
+            <button onClick="{{ addTask }}" style="width:52px;height:52px;border:none;border-radius:16px;background:var(--gold,#E6C77A);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#070707" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">{{ taskRows }}</div>
+          <sc-if value="{{ tasksEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 20px;text-align:center">
+              <div style="width:70px;height:70px;border-radius:50%;background:rgba(230,199,122,.1);display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--gold,#E6C77A)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></div>
+              <div style="font-size:18px;font-weight:600;color:#fff">Todo hecho</div>
+              <div style="font-size:14px;color:rgba(255,255,255,.45);max-width:240px">Has vaciado tu lista. Disfruta el resto del día.</div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- DIARIO -->
+      <sc-if value="{{ s.diario }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:58px 22px 120px">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+            <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.5px;color:#fff">Diario</h1>
+            <button onClick="{{ openJournalHistory }}" style="margin-left:auto;font-size:13px;color:rgba(255,255,255,.5);background:none;border:none;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">Histórico <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+          <div style="font-size:14px;color:rgba(255,255,255,.4);margin:0 0 22px 54px">Lunes, 22 de junio</div>
+          <div style="border-radius:24px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);padding:22px;min-height:230px;margin-bottom:24px">
+            <div style="font-size:13px;letter-spacing:1px;color:var(--gold,#E6C77A);text-transform:uppercase;margin-bottom:14px">Hoy</div>
+            <textarea placeholder="Escribe sobre tu día…" style="width:100%;min-height:170px;border:none;background:none;color:#fff;font-size:16px;line-height:1.7;font-family:inherit;resize:none;outline:none"></textarea>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:12px">Entradas anteriores</div>
+          <div style="display:flex;flex-direction:column;gap:10px">{{ journalRows }}</div>
+        </div>
+      </sc-if>
+
+      <!-- BUSCAR PERFILES -->
+      <sc-if value="{{ s.buscar }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:58px 20px 40px">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+            <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.4px;color:#fff">Buscar perfiles</h1>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);padding:0 16px;margin-bottom:20px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input value="{{ searchQuery }}" onInput="{{ onSearchInput }}" placeholder="Busca por nombre de usuario…" style="flex:1;background:none;border:none;color:#fff;font-size:15px;outline:none"/>
+          </div>
+          {{ searchResults }}
+        </div>
+      </sc-if>
+
+      <!-- COMUNIDAD -->
+      <sc-if value="{{ s.comunidad }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:#070707;animation:screenIn .5s ease;padding:58px 20px 40px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <span style="font-size:16px;font-weight:600;color:#fff">Comunidad</span>
+            <button onClick="{{ openNewCom }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(230,199,122,.3);background:rgba(230,199,122,.1);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold,#E6C77A)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <div style="font-size:13px;color:rgba(255,255,255,.4);margin:8px 2px 20px">Red privada · espacios para crecer en equipo</div>
+          <div style="display:flex;flex-direction:column;gap:14px">{{ communityRows }}</div>
+        </div>
+      </sc-if>
+
+      <!-- COMUNIDAD · DETALLE -->
+      <sc-if value="{{ s.comDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;background:#070707;animation:screenIn .5s ease;overflow:hidden">{{ comDetailView }}</div>
+      </sc-if>
+
+      <!-- MAPA -->
+      <sc-if value="{{ s.mapa }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;background:#05070b;animation:screenIn .5s ease;overflow:hidden">
+          {{ mapView }}
+          <div style="position:absolute;top:58px;left:22px;display:flex;align-items:center;gap:14px;z-index:5">
+            <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.12);background:rgba(8,10,16,.6);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <span style="font-size:17px;font-weight:600;color:#fff">Mapa global</span>
+          </div>
+          <div style="position:absolute;right:22px;bottom:200px;z-index:5">{{ mapZoom }}</div>
+          <div style="position:absolute;left:22px;right:22px;bottom:108px;padding:14px 16px;border-radius:20px;background:rgba(10,12,18,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);z-index:5;animation:riseFade .35s ease">{{ mapCard }}</div>
+        </div>
+      </sc-if>
+
+      <!-- PERFIL -->
+      <sc-if value="{{ s.perfil }}" hint-placeholder-val="{{ false }}">
+        <div class="vp" style="position:absolute;inset:0;overflow-y:auto;background:radial-gradient(90% 35% at 50% 0%,color-mix(in srgb, var(--lvl,#E6C77A) 11%, transparent),transparent 55%),#070707;animation:screenIn .5s ease;padding:58px 22px 120px;transition:background .6s">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+              <span style="font-size:16px;font-weight:600;color:#fff">Perfil</span>
+            </div>
+            <button onClick="{{ openSettings }}" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 7 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 2.6 14H2.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4 8.6l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 5.4V5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 17 4.6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9z"/></svg></button>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;margin-bottom:26px">
+            <image-slot id="perfilAvatar" shape="circle" placeholder="Foto" style="width:96px;height:96px;display:block;border:2px solid var(--gold,#E6C77A)"></image-slot>
+            <div><div style="font-size:22px;font-weight:700;color:#fff">{{ name }}</div><div style="font-size:14px;color:var(--gold,#E6C77A);margin-top:3px">Nivel {{ levelNum }} · {{ levelName }}</div></div>
+            <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:6px">{{ socialList }}</div>
+          </div>
+
+          <!-- progress card -->
+          <div onClick="{{ goNiveles }}" style="display:flex;align-items:center;gap:16px;border-radius:24px;padding:18px;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);margin-bottom:18px;cursor:pointer">
+            <div style="flex:none">{{ perfilCrystal }}</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:8px">Tu evolución</div><div style="height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden"><div style="height:100%;width:{{ progressW }};border-radius:4px;background:linear-gradient(90deg,var(--lvl,#E6C77A),#fff)"></div></div><div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:8px">{{ progressLabel }}</div></div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+
+          <!-- stats -->
+          <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:12px">Estadísticas</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:26px;font-weight:700;color:#fff">128</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Días activos</div></div>
+            <div style="padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:26px;font-weight:700;color:#fff">5</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Hábitos activos</div></div>
+            <div style="padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:26px;font-weight:700;color:var(--gold,#E6C77A)">12</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Racha actual</div></div>
+            <div style="padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)"><div style="font-size:26px;font-weight:700;color:#fff">340</div><div style="font-size:12px;color:rgba(255,255,255,.45);margin-top:2px">Entradas diario</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ============ BOTTOM NAV ============ -->
+    <sc-if value="{{ showNav }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:96px;z-index:70;background:linear-gradient(to top,#070707 55%,rgba(7,7,7,.75) 80%,transparent);backdrop-filter:blur(12px);display:flex;align-items:flex-start;justify-content:space-around;padding:14px 22px 0">
+        <button onClick="{{ tabHome }}" class="lg" style="border-radius:16px;padding:7px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;flex:1;color:{{ nav.inicio }}"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 16H4z"/><circle cx="12" cy="14" r="2"/></svg><span style="font-size:11px;font-weight:500">Inicio</span></button>
+        <button onClick="{{ tabHabitos }}" class="lg" style="border-radius:16px;padding:7px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;flex:1;color:{{ nav.habitos }}"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v3M16 2v3M8.5 14.5l2 2 3.5-4"/></svg><span style="font-size:11px;font-weight:500">Hábitos</span></button>
+        <button onClick="{{ tabTareas }}" class="lg" style="border-radius:16px;padding:7px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;flex:1;color:{{ nav.tareas }}"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg><span style="font-size:11px;font-weight:500">Tareas</span></button>
+        <button onClick="{{ tabDiario }}" class="lg" style="border-radius:16px;padding:7px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;flex:1;color:{{ nav.diario }}"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h11a2 2 0 0 1 2 2v16H8a2 2 0 0 1-2-2z"/><path d="M10 3v18M14 8h2M14 12h2"/></svg><span style="font-size:11px;font-weight:500">Diario</span></button>
+      </div>
+    </sc-if>
+
+    <!-- home indicator -->
+    <div style="position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(255,255,255,.5);z-index:95;pointer-events:none"></div>
+
+    <!-- ============ SHEET ============ -->
+    <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;z-index:100;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);animation:fadeIn .25s ease"></div>
+      <div style="position:absolute;bottom:0;left:0;right:0;z-index:101;background:#141416;border-radius:28px 28px 0 0;border-top:1px solid rgba(255,255,255,.1);padding:14px 24px 36px;animation:sheetUp .35s cubic-bezier(.2,.8,.2,1)">
+        <div style="width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin:0 auto 22px"></div>
+        {{ sheetContent }}
+      </div>
+    </sc-if>
+
+  </div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:920},&quot;level&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:1,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;userName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Marco&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#ffffff&quot;,&quot;options&quot;:[&quot;#E6C77A&quot;,&quot;#FFFFFF&quot;,&quot;#3AAAC2&quot;,&quot;#9B7BD4&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'splash',
+    stack: [],
+    onbStep: 0,
+    selLevel: null,
+    view: 'camino',
+    unlocking: false,
+    progress: 64,
+    sheet: null,
+    selHabit: null,
+    taskDraft: '',
+    habits: [
+      { id:1, name:'Meditar',  days:[true,true,false,true,true,false,false] },
+      { id:2, name:'Leer 20m', days:[true,false,true,true,false,false,false] },
+      { id:3, name:'Entrenar', days:[true,true,true,false,true,false,false] },
+      { id:4, name:'Agua 2L',  days:[true,true,true,true,true,false,false] },
+      { id:5, name:'Escribir', days:[false,true,false,true,false,false,false] },
+    ],
+    tasks: [
+      { id:1, text:'Revisar objetivos de la semana', done:false },
+      { id:2, text:'Llamar a mentor', done:false },
+      { id:3, text:'Publicar contenido', done:false },
+    ],
+    selCom: null, comTab: 'foro', chatDraft: '', selMember: null, newCom: null, mapSel: null,
+    searchQuery: '',
+    calY: 2026, calM: 5, calD: 22,
+    communities: [
+      {id:1,n:'CONSULTORÍA',m:'1.2k',a:'Muy activa',c:['#2C7D63','#155040'],desc:'Estrategia, captación de clientes y crecimiento para consultores independientes.',goal:'Cerrar tu primer cliente de alto valor en 90 días.',parts:[{nm:'Elena R.',lvl:4,c:['#2C7D63','#155040']},{nm:'Sofía M.',lvl:6,c:['#4787BE','#28567B']},{nm:'Diego F.',lvl:3,c:['#33998C','#114440']},{nm:'Lucía T.',lvl:7,c:['#869CC0','#566A8C']},{nm:'Iván P.',lvl:2,c:['#5B4A86','#241738']}],msgs:[{who:'Elena R.',me:false,text:'Bienvenidos al espacio. Esta semana arrancamos con la sesión de captación.',kind:'text',time:'09:12'},{who:'Sofía M.',me:false,text:'He dejado la plantilla de propuesta en archivos.',kind:'text',time:'09:40'},{who:'Sofía M.',me:false,kind:'file',text:'propuesta-cliente.pdf',time:'09:41'},{who:'Tú',me:true,text:'Genial, la reviso hoy y comparto feedback.',kind:'text',time:'10:05'}]},
+      {id:2,n:'IA',m:'3.4k',a:'En tendencia',c:['#4787BE','#28567B'],desc:'Automatización, prompts y herramientas de IA aplicada a tu negocio.',goal:'Lanzar un producto potenciado con IA este trimestre.',parts:[{nm:'Sofía M.',lvl:6,c:['#4787BE','#28567B']},{nm:'Marco',lvl:3,c:['#9A8748','#D0AE5A']},{nm:'Ana L.',lvl:5,c:['#3AAAC2','#134E5C']}],msgs:[{who:'Ana L.',me:false,text:'¿Alguien ha probado el nuevo modelo para generar landing pages?',kind:'text',time:'08:30'},{who:'Sofía M.',me:false,kind:'photo',time:'08:45',c:['#4787BE','#28567B']},{who:'Sofía M.',me:false,text:'Estos son mis resultados de ayer.',kind:'text',time:'08:46'}]},
+      {id:3,n:'ECOMMERCE',m:'890',a:'Activa',c:['#9A8748','#D0AE5A'],desc:'Tiendas online, logística y optimización de conversión.',goal:'Escalar a 10k/mes de facturación con margen sano.',parts:[{nm:'Diego F.',lvl:3,c:['#33998C','#114440']},{nm:'Lucía T.',lvl:7,c:['#869CC0','#566A8C']}],msgs:[{who:'Diego F.',me:false,text:'Comparto el checklist de optimización de ficha de producto.',kind:'text',time:'11:00'},{who:'Diego F.',me:false,kind:'file',text:'checklist-cro.pdf',time:'11:01'}]},
+      {id:4,n:'MARCA PERSONAL',m:'2.1k',a:'Muy activa',c:['#5B4A86','#241738'],desc:'Construye autoridad y una audiencia que confía en ti.',goal:'Publicar con constancia durante 30 días seguidos.',parts:[{nm:'Lucía T.',lvl:7,c:['#869CC0','#566A8C']},{nm:'Elena R.',lvl:4,c:['#2C7D63','#155040']},{nm:'Marco',lvl:3,c:['#9A8748','#D0AE5A']}],msgs:[{who:'Lucía T.',me:false,text:'Reto de la semana: 1 publicación diaria. ¿Quién se apunta?',kind:'text',time:'07:50'},{who:'Tú',me:true,text:'Yo me apunto.',kind:'text',time:'07:55'}]},
+      {id:5,n:'CREACIÓN DE CONTENIDO',m:'1.7k',a:'Activa',c:['#33998C','#114440'],desc:'Guiones, edición y formatos que retienen la atención.',goal:'Superar las 100k visualizaciones en un vídeo.',parts:[{nm:'Diego F.',lvl:3,c:['#33998C','#114440']},{nm:'Ana L.',lvl:5,c:['#3AAAC2','#134E5C']}],msgs:[{who:'Ana L.',me:false,text:'Plantilla de guion viral lista en archivos.',kind:'text',time:'12:10'}]},
+      {id:6,n:'FINANZAS',m:'2.6k',a:'En tendencia',c:['#3AAAC2','#134E5C'],desc:'Inversión, ahorro y libertad financiera a largo plazo.',goal:'Construir 6 meses de fondo de emergencia.',parts:[{nm:'Iván P.',lvl:2,c:['#5B4A86','#241738']},{nm:'Sofía M.',lvl:6,c:['#4787BE','#28567B']}],msgs:[{who:'Sofía M.',me:false,text:'Recordatorio: hoy a las 19h sesión sobre carteras indexadas.',kind:'text',time:'09:00'}]},
+      {id:7,n:'RESELLING',m:'640',a:'Nueva',c:['#869CC0','#566A8C'],desc:'Compra-venta inteligente y arbitraje de producto.',goal:'Hacer tus primeras 50 ventas.',parts:[{nm:'Iván P.',lvl:2,c:['#5B4A86','#241738']}],msgs:[{who:'Iván P.',me:false,text:'Bienvenidos. Empezamos por lo básico esta semana.',kind:'text',time:'10:30'}]},
+    ],
+  };
+
+  LEVELS = [
+    { n:1, name:'Aprendiz',      desc:'El primer paso. La piedra aún en bruto.',            img:'crystalsT/level1.png', aura:'#8B3FE6', colors:{deep:'#160F26',mid:'#241738',light:'#3C2A5E',edge:'#6A4FB0',glow:'#8B3FE6'} },
+    { n:2, name:'Acompañante',   desc:'Caminas con constancia. La forma emerge.',           img:'crystalsT/level2.png', aura:'#3F63E6', colors:{deep:'#0C1626',mid:'#142540',light:'#22416E',edge:'#4F74E6',glow:'#3F63E6'} },
+    { n:3, name:'Maestro',       desc:'Dominas tu disciplina. La gema toma color.',         img:'crystalsT/level3.png', aura:'#2FB98A', colors:{deep:'#0A211B',mid:'#103229',light:'#1A5141',edge:'#2FB98A',glow:'#2FB98A'} },
+    { n:4, name:'Guardián',      desc:'Proteges tu progreso. La luz crece.',                img:'crystalsT/level4.png', aura:'#FF4FA8', colors:{deep:'#2A0F22',mid:'#451631',light:'#7C2A57',edge:'#FF4FA8',glow:'#FF4FA8'} },
+    { n:5, name:'Vidente',       desc:'Ves más allá. Brillo y claridad.',                   img:'crystalsT/level5.png', aura:'#2FE0D2', colors:{deep:'#0C2F3A',mid:'#134E5C',light:'#21788C',edge:'#2FE0D2',glow:'#2FE0D2'} },
+    { n:6, name:'Arquitecto',    desc:'Construyes tu propio camino. Energía pura.',         img:'crystalsT/level6.png', aura:'#4F9BFF', colors:{deep:'#15334C',mid:'#28567B',light:'#4787BE',edge:'#4F9BFF',glow:'#4F9BFF'} },
+    { n:7, name:'Soberano',      desc:'Dueño de tu evolución. Casi pulido.',                img:'crystalsT/level7.png', aura:'#9FB2D0', colors:{deep:'#34415A',mid:'#566A8C',light:'#869CC0',edge:'#B0C4E0',glow:'#9FB2D0'} },
+    { n:8, name:'Iluminado',     desc:'Resplandor sereno. La perfección se acerca.',        img:'crystalsT/level8.png', aura:'#6FE6FF', colors:{deep:'#6A6A80',mid:'#9696AE',light:'#C6C6D8',edge:'#E6E6F0',glow:'#6FE6FF'} },
+    { n:9, name:'Grado Supremo', desc:'La cima. Cristal puro de luz y oro.',                img:'crystalsT/level9.png', aura:'#E6C77A', colors:{deep:'#9A8748',mid:'#D0AE5A',light:'#F2DC90',edge:'#FFF6D6',glow:'#E6C77A'} },
+  ];
+
+  componentDidMount() {
+    this._t = setTimeout(() => { if (this.state.screen === 'splash') this.setState({ screen:'onb', onbStep:0 }); }, 1900);
+    this._fit = () => this.fit();
+    window.addEventListener('resize', this._fit);
+    this._lgClick = (e) => { const t = e.target.closest && e.target.closest('button,[role="button"],.lg'); if(t && !t.disabled) this.lgTap({currentTarget:t}); };
+    document.addEventListener('click', this._lgClick, true);
+    this.fit();
+    if(this.state.screen === 'mapa') requestAnimationFrame(()=>requestAnimationFrame(()=>this.initGlobe()));
+  }
+  componentWillUnmount(){ clearTimeout(this._t); window.removeEventListener('resize', this._fit); document.removeEventListener('click', this._lgClick, true); this.destroyGlobe(); }
+  componentDidUpdate(prevProps, prevState){
+    if(this.state.screen === 'mapa' && !this._globe){
+      requestAnimationFrame(() => requestAnimationFrame(() => this.initGlobe()));
+    } else if(this.state.screen !== 'mapa' && this._globe){
+      this.destroyGlobe();
+      if(this.state.mapSel) this.setState({ mapSel: null });
+    }
+  }
+  fit(){
+    if(!this.phoneEl) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const s = Math.min(1, (vh-20)/852, (vw-20)/393);
+    this.phoneEl.style.zoom = s.toFixed(3);
+  }
+
+  TODAY = 6; // Domingo 22 — único día editable
+  USERS = [
+    {nm:'Elena R.', user:'@elena.r', lvl:4, c:['#2C7D63','#155040'], links:['Instagram','LinkedIn','Web'], city:'Madrid, España', lat:40.416, lng:-3.703},
+    {nm:'Sofía M.', user:'@sofiam', lvl:6, c:['#4787BE','#28567B'], links:['Instagram','X','YouTube'], city:'Barcelona, España', lat:41.385, lng:2.173},
+    {nm:'Diego F.', user:'@diegof', lvl:3, c:['#33998C','#114440'], links:['LinkedIn','Web'], city:'Valencia, España', lat:39.470, lng:-0.376},
+    {nm:'Lucía T.', user:'@lucia.t', lvl:7, c:['#869CC0','#566A8C'], links:['Instagram','YouTube','X'], city:'Sevilla, España', lat:37.389, lng:-5.984},
+    {nm:'Iván P.', user:'@ivanp', lvl:2, c:['#5B4A86','#241738'], links:['X','Web'], city:'Bilbao, España', lat:43.263, lng:-2.935},
+    {nm:'Ana L.', user:'@ana.l', lvl:5, c:['#3AAAC2','#134E5C'], links:['Instagram','LinkedIn'], city:'Lisboa, Portugal', lat:38.722, lng:-9.139},
+    {nm:'Marco', user:'@marco', lvl:3, c:['#9A8748','#D0AE5A'], links:['Instagram','X','LinkedIn'], city:'Madrid, España', lat:40.435, lng:-3.682, me:true},
+    {nm:'Carlos V.', user:'@carlosv', lvl:8, c:['#6A6A80','#9696AE'], links:['LinkedIn','Web','YouTube'], city:'Londres, Reino Unido', lat:51.507, lng:-0.128},
+    {nm:'Nora K.', user:'@norak', lvl:5, c:['#3E7CA8','#1C3B52'], links:['Instagram','Web'], city:'Berlín, Alemania', lat:52.520, lng:13.405},
+    {nm:'Théo B.', user:'@theob', lvl:4, c:['#7A5CA8','#3A2A52'], links:['X','YouTube'], city:'París, Francia', lat:48.857, lng:2.352},
+    {nm:'Liam O.', user:'@liamo', lvl:6, c:['#4AA88C','#1C5244'], links:['LinkedIn','Instagram'], city:'Nueva York, EE. UU.', lat:40.713, lng:-74.006},
+    {nm:'Mei L.', user:'@meil', lvl:7, c:['#C26A8A','#5C2E40'], links:['Instagram','YouTube','Web'], city:'Tokio, Japón', lat:35.676, lng:139.650},
+  ];
+  JOURNALS = [
+    {d:'Domingo 21 jun', t:'Buen ritmo esta semana. La meditación está dando frutos y noto más claridad por las mañanas. Cerré la semana con 4 de 5 hábitos y la sensación de avanzar.'},
+    {d:'Sábado 20 jun', t:'Día intenso pero satisfactorio. Cerré el proyecto pendiente y aún saqué tiempo para entrenar. Toca descansar sin culpa.'},
+    {d:'Viernes 19 jun', t:'Reflexioné sobre mis objetivos a 3 meses. Quiero enfocarme en consistencia más que en intensidad: pequeños pasos sostenidos.'},
+    {d:'Jueves 18 jun', t:'Costó arrancar, pero la lista de tareas ayudó a no dispersarme. Vaciarla al final del día fue muy satisfactorio.'},
+    {d:'Miércoles 17 jun', t:'Conversación clave con un mentor de la comunidad. Me llevo varias ideas para trabajar mi marca personal.'},
+    {d:'Martes 16 jun', t:'Empieza la semana con energía. Definí los hábitos que quiero sostener y, sobre todo, por qué importan.'},
+    {d:'Lunes 15 jun', t:'Semana de reinicio. Ordené prioridades y preparé el terreno para construir constancia real.'},
+    {d:'Domingo 14 jun', t:'Repaso mensual. He avanzado más de lo que sentía; el registro diario lo confirma negro sobre blanco.'},
+  ];
+  cur() { return Math.max(1, Math.min(9, this.props.level || 3)); }
+
+  crystalSvg(lv, size) {
+    const id = 'c' + Math.random().toString(36).slice(2,8);
+    const { deep, mid, light, edge, glow } = lv.colors;
+    const p = lv.polish, r = lv.rough;
+    const gb = 16 + lv.n * 3.5;
+    return `<div style="width:${size}px;height:${size*1.12}px;position:relative">
+      <svg width="${size}" height="${size*1.12}" viewBox="0 0 200 224" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+      <defs>
+        <linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mid}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+        <linearGradient id="${id}u" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="${light}"/><stop offset="1" stop-color="${mid}"/></linearGradient>
+        <linearGradient id="${id}c" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${edge}"/><stop offset="1" stop-color="${light}"/></linearGradient>
+        <linearGradient id="${id}l" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${mid}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+        <radialGradient id="${id}g"><stop offset="0" stop-color="${glow}" stop-opacity="${0.3 + p*0.45}"/><stop offset="1" stop-color="${glow}" stop-opacity="0"/></radialGradient>
+        <filter id="${id}b" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="${gb}"/></filter>
+      </defs>
+      <ellipse cx="100" cy="120" rx="86" ry="96" fill="url(#${id}g)" filter="url(#${id}b)"/>
+      <polygon points="28,200 64,120 100,12" fill="url(#${id}f)"/>
+      <polygon points="172,200 136,120 100,12" fill="url(#${id}f)"/>
+      <polygon points="100,12 100,74 64,120" fill="url(#${id}u)"/>
+      <polygon points="100,12 136,120 100,74" fill="url(#${id}u)" opacity="0.9"/>
+      <polygon points="64,120 100,74 136,120 100,142" fill="url(#${id}c)"/>
+      <polygon points="64,120 100,142 100,200 28,200" fill="url(#${id}l)"/>
+      <polygon points="136,120 172,200 100,200 100,142" fill="url(#${id}l)" opacity="0.9"/>
+      <circle cx="100" cy="118" r="${9 + p*4}" fill="none" stroke="${edge}" stroke-width="1.4" opacity="${0.18 + p*0.6}"/>
+      <circle cx="100" cy="118" r="${2.5 + p*2}" fill="${edge}" opacity="${0.15 + p*0.7}"/>
+      <polygon points="100,12 100,74 110,66" fill="#ffffff" opacity="${p*0.5}"/>
+      <polygon points="28,200 100,12 172,200" fill="none" stroke="${edge}" stroke-width="1.2" stroke-linejoin="round" opacity="${0.22 + p*0.55}"/>
+      </svg></div>`;
+  }
+  crystal(lv, size) {
+    return React.createElement('div', { style:{position:'relative',width:size+'px',height:size+'px',display:'flex',alignItems:'center',justifyContent:'center'} }, [
+      React.createElement('div',{key:'g',style:{position:'absolute',inset:'-36%',borderRadius:'50%',background:`radial-gradient(circle, ${this.hexA(lv.aura,0.85)}, ${this.hexA(lv.aura,0.22)} 40%, transparent 72%)`,filter:'blur(28px)',animation:'glowPulse 4.5s ease-in-out infinite',pointerEvents:'none'}}),
+      React.createElement('div',{key:'g2',style:{position:'absolute',inset:'4%',borderRadius:'50%',background:`radial-gradient(circle, ${this.hexA(lv.aura,0.5)}, transparent 58%)`,filter:'blur(12px)',animation:'glowPulse 3.4s ease-in-out infinite',pointerEvents:'none'}}),
+      React.createElement('div',{key:'s',style:{position:'relative',width:'100%',height:'100%',filter:`drop-shadow(0 0 28px ${this.hexA(lv.aura,0.9)}) drop-shadow(0 0 58px ${this.hexA(lv.aura,0.45)}) drop-shadow(0 10px 22px rgba(0,0,0,.4))`}},
+        React.createElement('img',{src:lv.img,alt:lv.name,draggable:false,style:{width:'100%',height:'100%',objectFit:'contain',animation:'lvShimmer 6s ease-in-out infinite'}})),
+    ]);
+  }
+
+  logoSvg() {
+    return React.createElement('div', { dangerouslySetInnerHTML: { __html:
+      `<svg width="92" height="86" viewBox="0 0 120 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M60 8 L112 100 L8 100 Z" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M28 74 Q60 50 92 74 Q60 98 28 74 Z" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="60" cy="74" r="12" stroke="#fff" stroke-width="4"/>
+      </svg>` } });
+  }
+
+  // ---- navigation ----
+  go(s){ this.setState(st => ({ stack:[...st.stack, st.screen], screen:s })); }
+  back(){ this.setState(st => { const k=[...st.stack]; const p=k.pop()||'home'; return { stack:k, screen:p }; }); }
+  tab(s){ this.setState({ screen:s, stack:[], sheet:null }); }
+
+  renderVals() {
+    const sc = this.state.screen;
+    const S = {}; ['splash','onb','auth','profile','permCam','permLoc','home','niveles','habitos','tareas','diario','buscar','comunidad','comDetail','mapa','perfil'].forEach(k => S[k] = sc === k);
+    const cur = this.cur();
+    const curLv = this.LEVELS[cur-1];
+    const nextLv = this.LEVELS[Math.min(8, cur)];
+    const sel = this.state.selLevel || cur;
+    const selLv = this.LEVELS[sel-1];
+    const G = this.props.accent || '#E6C77A';
+
+    // onboarding
+    const slides = [
+      { title:'Evoluciona cada día.', body:'Disciplina, hábitos y reflexión en un solo lugar. Tu mejor versión, día tras día.' },
+      { title:'Asciende de nivel.', body:'Tu progreso toma forma. De aprendiz a Grado Supremo, tu cristal se pule contigo.' },
+      { title:'No caminas solo.', body:'Una comunidad privada y global que crece a tu lado.' },
+    ];
+    const step = this.state.onbStep;
+    const onb = {
+      title: slides[step].title, body: slides[step].body,
+      last: step === 2, notLast: step < 2,
+      d1: step===0?'24px':'6px', d2: step===1?'24px':'6px', d3: step===2?'24px':'6px',
+      c1: step===0?'#fff':'rgba(255,255,255,.22)', c2: step===1?'#fff':'rgba(255,255,255,.22)', c3: step===2?'#fff':'rgba(255,255,255,.22)',
+    };
+
+    // nav colors (Inicio · Hábitos · Tareas)
+    const at = { home:'inicio', habitos:'habitos', tareas:'tareas', diario:'diario' }[sc];
+    const navC = k => at===k ? G : 'rgba(255,255,255,.4)';
+    const nav = { inicio:navC('inicio'), habitos:navC('habitos'), tareas:navC('tareas'), diario:navC('diario') };
+    const showNav = ['home','habitos','tareas','diario'].includes(sc);
+
+    // niveles views
+    const v = this.state.view;
+    const seg = (on) => on ? '#fff' : 'transparent';
+    const segC = (on) => on ? '#070707' : 'rgba(255,255,255,.55)';
+    const selBg = `radial-gradient(100% 50% at 50% 12%, ${this.hexA(selLv.colors.glow,0.22)}, #070707 60%)`;
+
+    // camino path (vertical winding)
+    const caminoPath = this.buildCamino(sel, G);
+    const orbitaView = this.buildOrbita(selLv, sel, G);
+    const ascensoBars = this.buildAscenso(sel, G);
+
+    // habits
+    const dayNames = ['L','M','X','J','V','S','D'];
+    const dayHeaders = React.createElement(React.Fragment, {}, dayNames.map((d,i)=>{
+      const today=i===this.TODAY;
+      return React.createElement('div',{key:i,style:{width:'30px',textAlign:'center',fontSize:'11px',fontWeight:today?800:600,color: today?G:(i>=5?'rgba(255,255,255,.28)':'rgba(255,255,255,.45)')}}, d);
+    }));
+    const habitRows = React.createElement(React.Fragment, {}, this.state.habits.map((h,hi)=>
+      React.createElement('div',{key:h.id,style:{display:'flex',alignItems:'center',padding:'9px 0',borderTop:hi===0?'none':'1px solid rgba(255,255,255,.05)'}},[
+        React.createElement('button',{key:'n',onClick:()=>this.setState({sheet:'habitOpts',selHabit:hi}),style:{flex:1,textAlign:'left',background:'none',border:'none',color:'#fff',fontSize:'14px',fontWeight:500,fontFamily:'inherit',cursor:'pointer',paddingLeft:'2px'}},h.name),
+        React.createElement('div',{key:'c',style:{display:'flex',gap:'3px'}}, h.days.map((on,di)=>{
+          const today=di===this.TODAY, past=di<this.TODAY;
+          const dot = on
+            ? React.createElement('span',{style:{width:today?'26px':'24px',height:today?'26px':'24px',borderRadius:'50%',background: today?G:this.hexA(G,0.28),display:'flex',alignItems:'center',justifyContent:'center'}},
+                React.createElement('svg',{width:13,height:13,viewBox:'0 0 24 24',fill:'none',stroke: today?'#070707':this.hexA(G,0.95),strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M5 12.5l4 4L19 7'})))
+            : React.createElement('span',{style:{width:today?'25px':'22px',height:today?'25px':'22px',borderRadius:'50%',border: today?('1.5px solid '+G):'1.5px solid rgba(255,255,255,.12)'}});
+          return React.createElement('button',{key:di,className: today?'lg':undefined,onClick: today?((e)=>{this.lgTap(e);this.toggleHabit(hi,di)}):undefined,disabled:!today,style:{width:'30px',height:'30px',borderRadius:'50%',border:'none',background: today?this.hexA(G,0.09):'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor: today?'pointer':'default',padding:0,opacity: today?1:(past?0.62:0.32)}}, dot);
+        })),
+      ])));
+
+    // tasks
+    const tasksLeft = this.state.tasks.filter(t=>!t.done).length;
+    const tasksEmpty = this.state.tasks.length === 0;
+    const taskRows = React.createElement(React.Fragment, {}, this.state.tasks.map((t,ti)=>
+      React.createElement('div',{key:t.id,style:{display:'flex',alignItems:'center',gap:'14px',padding:'16px 18px',borderRadius:'18px',background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',opacity:t.done?0.35:1,transform:t.done?'scale(.97)':'none',transition:'all .35s'}},[
+        React.createElement('button',{key:'c',className:'lg',onClick:(e)=>{this.lgTap(e);this.toggleTask(ti)},style:{width:'26px',height:'26px',flex:'none',borderRadius:'50%',border:t.done?'none':'1.7px solid rgba(255,255,255,.25)',background:t.done?G:'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',padding:0}},
+          t.done ? React.createElement('svg',{width:15,height:15,viewBox:'0 0 24 24',fill:'none',stroke:'#070707',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M5 12.5l4 4L19 7'})) : null),
+        React.createElement('span',{key:'t',style:{flex:1,fontSize:'15px',color:'#fff',textDecoration:t.done?'line-through':'none'}},t.text),
+      ])));
+
+    // journal entries (preview · primeras 3, toca para leer)
+    const journalRows = React.createElement(React.Fragment, {}, this.JOURNALS.slice(0,3).map((j,i)=>
+      React.createElement('button',{key:i,className:'lg glass',onClick:()=>this.setState({sheet:'journalEntry',selJournal:i}),style:{display:'block',width:'100%',textAlign:'left',padding:'16px 18px',borderRadius:'18px',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)',cursor:'pointer',fontFamily:'inherit'}},[
+        React.createElement('div',{key:'d',style:{fontSize:'12px',color:G,marginBottom:'6px'}},j.d),
+        React.createElement('div',{key:'t',style:{fontSize:'14px',color:'rgba(255,255,255,.7)',lineHeight:1.5,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical'}},j.t),
+      ])));
+
+    // community
+    const communityRows = this.buildComList(G);
+    const comDetailView = this.buildComDetail(G);
+
+    // map
+    const mapView = this.buildMap(G);
+    const mapSel = this.state.mapSel;
+    const mapCard = mapSel ? React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'14px'}},[
+      React.createElement('div',{key:'a',style:{width:'46px',height:'46px',flex:'none',borderRadius:'50%',background:`linear-gradient(135deg, ${mapSel.c[0]}, ${mapSel.c[1]})`,border:mapSel.me?`2px solid ${G}`:'1px solid rgba(255,255,255,.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px',fontWeight:700,color:'#fff'}}, this.initials(mapSel.nm)),
+      React.createElement('div',{key:'t',style:{flex:1,minWidth:0}},[
+        React.createElement('div',{key:'n',style:{fontSize:'15px',fontWeight:600,color:'#fff',display:'flex',alignItems:'center',gap:'7px'}}, mapSel.user, mapSel.me?React.createElement('span',{key:'me',style:{fontSize:'10px',fontWeight:700,letterSpacing:'.5px',color:G,border:`1px solid ${this.hexA(G,.5)}`,borderRadius:'6px',padding:'1px 6px'}},'TÚ'):null),
+        React.createElement('div',{key:'l',style:{fontSize:'12px',color:'rgba(255,255,255,.5)',marginTop:'3px',display:'flex',alignItems:'center',gap:'5px'}},[
+          React.createElement('svg',{key:'i',width:12,height:12,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('path',{key:1,d:'M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z'}),React.createElement('circle',{key:2,cx:12,cy:10,r:2.6})]),
+          `Nivel ${mapSel.lvl} · ${mapSel.city}`,
+        ]),
+      ]),
+      React.createElement('button',{key:'b',onClick:()=>this.openMember({nm:mapSel.nm,lvl:mapSel.lvl,c:mapSel.c,user:mapSel.user,city:mapSel.city}),style:{padding:'10px 18px',borderRadius:'13px',border:'none',background:G,color:'#070707',fontSize:'13px',fontWeight:700,fontFamily:'inherit',cursor:'pointer',flex:'none'}},'Ver perfil'),
+    ]) : React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'12px'}},[
+      React.createElement('div',{key:'i',style:{width:'38px',height:'38px',flex:'none',borderRadius:'50%',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}, React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('circle',{key:1,cx:11,cy:11,r:7}),React.createElement('path',{key:2,d:'M21 21l-4-4'})])),
+      React.createElement('div',{key:'t',style:{flex:1}},[
+        React.createElement('div',{key:'a',style:{fontSize:'14px',fontWeight:600,color:'#fff'}},'Explora la comunidad'),
+        React.createElement('div',{key:'b',style:{fontSize:'12px',color:'rgba(255,255,255,.45)',marginTop:'2px'}},'Arrastra para rotar · pellizca para hacer zoom · toca un punto'),
+      ]),
+    ]);
+    const mapZoom = React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}}, [['+',0.7],['−',1.45]].map(([sym,f],i)=>
+      React.createElement('button',{key:i,onClick:()=>{ if(this._globe){ const c=this._globe.controls(); c.autoRotate=false; const pov=this._globe.pointOfView(); this._globe.pointOfView({ altitude: Math.max(0.45, Math.min(3.2, pov.altitude*f)) }, 420); } },style:{width:'42px',height:'42px',borderRadius:'14px',border:'1px solid rgba(255,255,255,.12)',background:'rgba(8,10,16,.65)',backdropFilter:'blur(10px)',color:'#fff',fontSize:'22px',fontWeight:400,fontFamily:'inherit',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}, sym)));
+
+    // social rows (profile create)
+    const socials = [
+      {k:'Instagram', ph:'@usuario'},
+      {k:'LinkedIn', ph:'/in/usuario'},
+      {k:'X', ph:'@usuario'},
+      {k:'YouTube', ph:'@canal'},
+      {k:'Teléfono', ph:'+34 600 000 000'},
+    ];
+    const socialRows = React.createElement(React.Fragment, {}, socials.map((s,i)=>
+      React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'12px',height:'52px',borderRadius:'15px',border:'1px solid rgba(255,255,255,.09)',background:'rgba(255,255,255,.03)',padding:'0 14px'}},[
+        React.createElement('span',{key:'i',style:{width:'30px',height:'30px',borderRadius:'9px',background:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:G,fontWeight:700}},s.k[0]),
+        React.createElement('span',{key:'k',style:{fontSize:'13px',color:'rgba(255,255,255,.5)',width:'78px'}},s.k),
+        React.createElement('input',{key:'in',placeholder:s.ph,style:{flex:1,background:'none',border:'none',color:'#fff',fontSize:'14px',outline:'none'}}),
+      ])));
+
+    const socialChips = React.createElement(React.Fragment, {}, ['IG','in','X','YT'].map((s,i)=>
+      React.createElement('div',{key:i,style:{width:'38px',height:'38px',borderRadius:'12px',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:600,color:'rgba(255,255,255,.7)'}},s)));
+
+    // perfil · enlaces verticales
+    const handle = '@' + (this.props.userName || 'marco').toLowerCase().replace(/[^a-z0-9]/g,'');
+    const socialItems = [
+      {k:'Instagram', h:handle},
+      {k:'LinkedIn', h:'/in/'+(this.props.userName||'marco').toLowerCase().replace(/[^a-z0-9]/g,'')},
+      {k:'X', h:handle},
+      {k:'YouTube', h:handle},
+      {k:'Teléfono', h:'+34 600 12 12 12'},
+    ];
+    const socialList = React.createElement(React.Fragment, {}, socialItems.map((s,i)=>
+      React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'12px',height:'52px',borderRadius:'14px',border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)',padding:'0 14px'}},[
+        React.createElement('span',{key:'i',style:{width:'30px',height:'30px',borderRadius:'9px',background:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:700,color:G,flex:'none'}}, s.k[0]),
+        React.createElement('span',{key:'k',style:{fontSize:'14px',color:'#fff',fontWeight:500}}, s.k),
+        React.createElement('span',{key:'h',style:{marginLeft:'auto',fontSize:'13px',color:'rgba(255,255,255,.45)'}}, s.h),
+      ])));
+
+    // activity rows (home)
+    const acts = [
+      {t:'Completaste “Meditar”', s:'Hace 1 h', g:true},
+      {t:'Nueva entrada en el diario', s:'Hace 3 h', g:false},
+      {t:'Te uniste a IA', s:'Ayer', g:false},
+    ];
+    const activityRows = React.createElement(React.Fragment, {}, acts.map((a,i)=>
+      React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'14px',padding:'14px 4px',borderTop:i===0?'none':'1px solid rgba(255,255,255,.05)'}},[
+        React.createElement('div',{key:'d',style:{width:'8px',height:'8px',borderRadius:'50%',flex:'none',background:a.g?G:'rgba(255,255,255,.3)'}}),
+        React.createElement('div',{key:'t',style:{flex:1,fontSize:'14px',color:'#fff'}},a.t),
+        React.createElement('div',{key:'s',style:{fontSize:'12px',color:'rgba(255,255,255,.35)'}},a.s),
+      ])));
+
+    // sheet content
+    let sheetContent = null;
+    if (this.state.sheet === 'newHabit') sheetContent = this.sheetNewHabit(G);
+    else if (this.state.sheet === 'habitOpts') sheetContent = this.sheetHabitOpts(G);
+    else if (this.state.sheet === 'settings') sheetContent = this.sheetSettings(G);
+    else if (this.state.sheet === 'history') sheetContent = this.sheetHistory(G);
+    else if (this.state.sheet === 'member') sheetContent = this.sheetMember(G);
+    else if (this.state.sheet === 'newCom') sheetContent = this.sheetNewCom(G);
+    else if (this.state.sheet === 'delCom') sheetContent = this.sheetDelCom(G);
+    else if (this.state.sheet === 'journalHistory') sheetContent = this.sheetJournalHistory(G);
+    else if (this.state.sheet === 'journalEntry') sheetContent = this.sheetJournalEntry(G);
+
+    return {
+      s: S, showNav, nav,
+      phoneRef: (el) => { this.phoneEl = el; this.fit(); },
+      logoMark: this.logoSvg(),
+      onbCrystal: this.crystal(this.LEVELS[Math.min(8, step+1)], 150),
+      onb, nextOnb: () => this.setState(st => ({ onbStep: Math.min(2, st.onbStep+1) })),
+      goAuth: () => this.setState({ screen:'auth', stack:[] }),
+      goProfile: () => this.go('profile'),
+      goPermCam: () => this.go('permCam'),
+      goPermLoc: () => this.go('permLoc'),
+      enterApp: () => this.setState({ screen:'home', stack:[] }),
+
+      name: this.props.userName || 'Marco',
+      levelNum: cur, levelName: curLv.name, levelAura: curLv.aura,
+      progressW: this.state.progress + '%',
+      progressLabel: `${this.state.progress}% hacia ${nextLv.name}`,
+      homeCrystal: this.crystal(curLv, 210),
+      habitsToday: this.state.habits.filter(h=>h.days[this.TODAY]).length + '/' + this.state.habits.length,
+      perfilCrystal: this.crystal(curLv, 64),
+
+      goNiveles: () => this.go('niveles'),
+      goHabitos: () => this.go('habitos'),
+      goTareas: () => this.tab('tareas'),
+      goDiario: () => this.go('diario'),
+      goComunidad: () => this.go('comunidad'),
+      goMapa: () => this.go('mapa'),
+      goPerfil: () => this.go('perfil'),
+      back: () => this.back(),
+      tabHome: (e) => { this.lgTap(e); this.tab('home'); }, tabHabitos: (e) => { this.lgTap(e); this.tab('habitos'); }, tabTareas: (e) => { this.lgTap(e); this.tab('tareas'); }, tabDiario: (e) => { this.lgTap(e); this.tab('diario'); },
+      goBuscar: () => this.go('buscar'),
+      searchQuery: this.state.searchQuery,
+      onSearchInput: (e) => this.setState({ searchQuery: e.target.value }),
+      searchResults: this.buildSearch(G),
+
+      // niveles
+      selNum: sel, selName: selLv.name, selDesc: selLv.desc,
+      selCrystal: this.crystal(selLv, 150),
+      selGlow: this.hexA(selLv.colors.glow, 0.5), selBg,
+      unlocking: this.state.unlocking,
+      setCamino: () => this.setState({ view:'camino' }),
+      setOrbita: () => this.setState({ view:'orbita' }),
+      setAscenso: () => this.setState({ view:'ascenso' }),
+      tabCamino: seg(v==='camino'), tabCaminoC: segC(v==='camino'),
+      tabOrbita: seg(v==='orbita'), tabOrbitaC: segC(v==='orbita'),
+      tabAscenso: seg(v==='ascenso'), tabAscensoC: segC(v==='ascenso'),
+      viewCamino: v==='camino', viewOrbita: v==='orbita', viewAscenso: v==='ascenso',
+      caminoPath, orbitaView, ascensoBars,
+      playUnlock: () => this.playUnlock(),
+
+      // habits
+      dayHeaders, habitRows,
+      openNewHabit: () => this.setState({ sheet:'newHabit', habitDraft:'' }),
+      openHistory: () => this.setState({ sheet:'history', calY:2026, calM:5, calD:22 }),
+      openJournalHistory: () => this.setState({ sheet:'journalHistory', calY:2026, calM:5, calD:21 }),
+
+      // tasks
+      tasksLabel: tasksEmpty ? 'Sin tareas pendientes' : `${tasksLeft} pendientes`,
+      taskRows, tasksEmpty,
+      taskDraft: this.state.taskDraft,
+      onTaskInput: (e) => this.setState({ taskDraft: e.target.value }),
+      onTaskKey: (e) => { if (e.key === 'Enter') this.addTask(); },
+      addTask: () => this.addTask(),
+
+      journalRows, communityRows, comDetailView, mapView, mapCard, mapZoom,
+      socialRows, socialChips, socialList, activityRows,
+      openNewCom: () => this.setState({ sheet:'newCom', newCom:{id:Date.now(),name:'',desc:'',goal:'',c:['#2C7D63','#155040']} }),
+
+      // sheet
+      sheetOpen: !!this.state.sheet,
+      sheetContent,
+      closeSheet: () => this.setState({ sheet:null }),
+      openSettings: () => this.setState({ sheet:'settings' }),
+    };
+  }
+
+  hexA(hex, a) {
+    const h = hex.replace('#',''); const n = parseInt(h.length===3 ? h.split('').map(x=>x+x).join('') : h, 16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+  }
+
+  lgTap(e){ const el=e&&e.currentTarget; if(!el) return; el.classList.remove('lg-on'); void el.offsetWidth; el.classList.add('lg-on'); el.addEventListener('animationend',()=>el.classList.remove('lg-on'),{once:true}); }
+  toggleHabit(hi, di){ if(di!==this.TODAY) return; this.setState(st => { const h=st.habits.map((x,i)=> i!==hi?x:{...x,days:x.days.map((d,j)=>j===di?!d:d)}); return {habits:h}; }); }
+  toggleTask(ti){
+    this.setState(st => ({ tasks: st.tasks.map((t,i)=> i===ti?{...t,done:!t.done}:t) }));
+    setTimeout(() => this.setState(st => ({ tasks: st.tasks.filter(t=>!t.done) })), 420);
+  }
+  addTask(){
+    const v=(this.state.taskDraft||'').trim(); if(!v) return;
+    this.setState(st => ({ tasks:[...st.tasks, {id:Date.now(), text:v, done:false}], taskDraft:'' }));
+  }
+  playUnlock(){
+    const sel = this.state.selLevel || this.cur();
+    if (sel >= 9) { this.flash(); return; }
+    this.setState({ unlocking:true });
+    setTimeout(() => this.setState({ selLevel: sel+1, unlocking:false }), 800);
+  }
+  flash(){ this.setState({ unlocking:true }); setTimeout(()=>this.setState({unlocking:false}),1400); }
+
+  // ---- sheet builders ----
+  sheetNewHabit(G){
+    return React.createElement('div',{},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'18px'}},'Nuevo hábito'),
+      React.createElement('input',{key:'i',autoFocus:true,value:this.state.habitDraft||'',onInput:(e)=>this.setState({habitDraft:e.target.value}),placeholder:'Ej. Meditar 10 min',style:{width:'100%',height:'54px',borderRadius:'16px',border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.04)',color:'#fff',fontSize:'15px',padding:'0 18px',outline:'none',marginBottom:'14px',fontFamily:'inherit'}}),
+      React.createElement('div',{key:'chips',style:{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'22px'}}, ['Meditar','Leer','Entrenar','Agua','Dormir 8h'].map((c,i)=>
+        React.createElement('button',{key:i,onClick:()=>this.setState({habitDraft:c}),style:{padding:'9px 14px',borderRadius:'12px',border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.04)',color:'rgba(255,255,255,.7)',fontSize:'13px',fontFamily:'inherit',cursor:'pointer'}},c))),
+      React.createElement('button',{key:'b',onClick:()=>this.createHabit(),style:{width:'100%',height:'54px',border:'none',borderRadius:'18px',background:G,color:'#070707',fontSize:'16px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Crear hábito'),
+    ]);
+  }
+  createHabit(){
+    const v=(this.state.habitDraft||'').trim(); if(!v){ this.setState({sheet:null}); return; }
+    this.setState(st => ({ habits:[...st.habits, {id:Date.now(), name:v, days:[false,false,false,false,false,false,false]}], sheet:null, habitDraft:'' }));
+  }
+  sheetHabitOpts(G){
+    const h = this.state.habits[this.state.selHabit];
+    return React.createElement('div',{},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'4px'}}, h ? h.name : 'Hábito'),
+      React.createElement('div',{key:'s',style:{fontSize:'13px',color:'rgba(255,255,255,.45)',marginBottom:'20px'}},'Editar o eliminar este hábito'),
+      React.createElement('button',{key:'e',onClick:()=>this.setState({sheet:'newHabit',habitDraft:h?h.name:''}),style:{width:'100%',height:'52px',marginBottom:'10px',border:'1px solid rgba(255,255,255,.1)',borderRadius:'16px',background:'rgba(255,255,255,.04)',color:'#fff',fontSize:'15px',fontWeight:500,fontFamily:'inherit',cursor:'pointer'}},'Editar'),
+      React.createElement('button',{key:'d',onClick:()=>this.deleteHabit(),style:{width:'100%',height:'52px',border:'none',borderRadius:'16px',background:'rgba(255,80,80,.12)',color:'#FF6B6B',fontSize:'15px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Eliminar'),
+    ]);
+  }
+  deleteHabit(){ this.setState(st => ({ habits: st.habits.filter((_,i)=>i!==st.selHabit), sheet:null, selHabit:null })); }
+  sheetSettings(G){
+    const rows = ['Cuenta','Notificaciones','Privacidad','Apariencia','Ayuda'];
+    return React.createElement('div',{},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'18px'}},'Ajustes'),
+      React.createElement('div',{key:'l',style:{display:'flex',flexDirection:'column',gap:'2px'}}, rows.map((r,i)=>
+        React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'15px 4px',borderTop:i===0?'none':'1px solid rgba(255,255,255,.06)'}},[
+          React.createElement('span',{key:'t',style:{fontSize:'15px',color:'#fff'}},r),
+          React.createElement('svg',{key:'c',width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'rgba(255,255,255,.35)',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M9 6l6 6-6 6'})),
+        ]))),
+      React.createElement('button',{key:'o',style:{width:'100%',height:'50px',marginTop:'18px',border:'none',borderRadius:'16px',background:'rgba(255,255,255,.04)',color:'#FF6B6B',fontSize:'15px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Cerrar sesión'),
+    ]);
+  }
+  sheetHistory(G){
+    return this.buildCalendar('habits', G);
+  }
+  sheetJournalHistory(G){
+    return this.buildCalendar('journal', G);
+  }
+  // ---- calendar histórico ----
+  MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  WDAYS = ['L','M','X','J','V','S','D'];
+  TODAY_DATE = {y:2026, m:5, d:23};
+  isFutureDate(y,m,d){ const t=this.TODAY_DATE; return y>t.y || (y===t.y&&m>t.m) || (y===t.y&&m===t.m&&d>t.d); }
+  journalByDay(y,m){
+    const map={};
+    if(y===2026 && m===5){ this.JOURNALS.forEach(j=>{ const mt=j.d.match(/(\d+)/); if(mt) map[parseInt(mt[1])]=j; }); }
+    return map;
+  }
+  habitsForDate(y,m,d){
+    // registro determinista por hábito/fecha (sólo fechas pasadas tienen datos)
+    return this.state.habits.map(h=>{
+      const seed=(h.id*97 + d*29 + (m+1)*53 + (y%100)*13) % 100;
+      return { nm:h.name, done: seed < 64 };
+    });
+  }
+  calShiftMonth(delta){ this.setState(st => { let m=st.calM+delta, y=st.calY; if(m<0){m=11;y--;} if(m>11){m=0;y++;} return {calM:m, calY:y, calD:null}; }); }
+  calShiftYear(delta){ this.setState(st => ({ calY:st.calY+delta, calD:null })); }
+  buildCalendar(mode, G){
+    const y=this.state.calY, m=this.state.calM, sel=this.state.calD;
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const startDow=(new Date(y,m,1).getDay()+6)%7; // lunes=0
+    const jmap = mode==='journal' ? this.journalByDay(y,m) : null;
+    const hasData=(d)=> mode==='journal' ? !!(jmap&&jmap[d]) : !this.isFutureDate(y,m,d);
+    // navegación año/mes
+    const navBtn=(label,on)=>React.createElement('button',{key:label,onClick:on,style:{width:'32px',height:'32px',borderRadius:'10px',border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.04)',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',fontFamily:'inherit'}}, label);
+    const yearRow=React.createElement('div',{key:'yr',style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'12px'}},[
+      navBtn('‹',()=>this.calShiftYear(-1)),
+      React.createElement('span',{key:'t',style:{fontSize:'15px',fontWeight:700,color:'#fff',letterSpacing:'1px'}}, y),
+      navBtn('›',()=>this.calShiftYear(1)),
+    ]);
+    const monthRow=React.createElement('div',{key:'mo',style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},[
+      navBtn('‹',()=>this.calShiftMonth(-1)),
+      React.createElement('span',{key:'t',style:{fontSize:'17px',fontWeight:600,color:'#fff'}}, this.MONTHS[m]),
+      navBtn('›',()=>this.calShiftMonth(1)),
+    ]);
+    const wdayRow=React.createElement('div',{key:'wd',style:{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'4px',marginBottom:'6px'}}, this.WDAYS.map((d,i)=>
+      React.createElement('div',{key:i,style:{textAlign:'center',fontSize:'11px',fontWeight:600,color: i>=5?'rgba(255,255,255,.3)':'rgba(255,255,255,.45)'}}, d)));
+    const cells=[];
+    for(let i=0;i<startDow;i++) cells.push(React.createElement('div',{key:'e'+i}));
+    for(let d=1;d<=daysInMonth;d++){
+      const isSel=sel===d, has=hasData(d), fut=this.isFutureDate(y,m,d);
+      cells.push(React.createElement('button',{key:'d'+d,className:'lg',onClick:()=>this.setState({calD:d}),style:{position:'relative',height:'42px',borderRadius:'12px',border:isSel?`1.5px solid ${G}`:'1px solid transparent',background:isSel?this.hexA(G,0.16):'transparent',color: fut?'rgba(255,255,255,.28)':'#fff',fontSize:'14px',fontWeight:isSel?700:500,fontFamily:'inherit',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}},[
+        React.createElement('span',{key:'n'}, d),
+        has&&!isSel ? React.createElement('span',{key:'dot',style:{position:'absolute',bottom:'6px',left:'50%',transform:'translateX(-50%)',width:'4px',height:'4px',borderRadius:'50%',background:G}}) : null,
+      ]));
+    }
+    const grid=React.createElement('div',{key:'grid',style:{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'4px'}}, cells);
+    // detalle del día seleccionado
+    let detail;
+    const dateLabel = sel ? `${sel} de ${this.MONTHS[m].toLowerCase()} de ${y}` : null;
+    const sectLabel=(t)=>React.createElement('div',{key:'dl',style:{fontSize:'12px',letterSpacing:'1px',textTransform:'uppercase',color:G,margin:'0 0 12px'}},t);
+    if(!sel){
+      detail=React.createElement('div',{key:'det',style:{padding:'30px 8px',textAlign:'center',fontSize:'14px',color:'rgba(255,255,255,.4)'}},'Selecciona un día para ver el detalle.');
+    } else if(mode==='journal'){
+      const j=jmap[sel];
+      detail=React.createElement('div',{key:'det'},[ sectLabel(dateLabel),
+        j ? React.createElement('p',{key:'t',style:{margin:0,fontSize:'15px',lineHeight:1.65,color:'#fff'}}, j.t)
+          : React.createElement('div',{key:'e',style:{padding:'20px 8px',textAlign:'center',fontSize:'14px',color:'rgba(255,255,255,.4)'}}, this.isFutureDate(y,m,sel)?'Fecha futura.':'Sin entrada para este día.'),
+      ]);
+    } else {
+      if(this.isFutureDate(y,m,sel)){
+        detail=React.createElement('div',{key:'det'},[ sectLabel(dateLabel),
+          React.createElement('div',{key:'e',style:{padding:'20px 8px',textAlign:'center',fontSize:'14px',color:'rgba(255,255,255,.4)'}},'Fecha futura · sin registro.') ]);
+      } else {
+        const rows=this.habitsForDate(y,m,sel);
+        const done=rows.filter(r=>r.done).length;
+        detail=React.createElement('div',{key:'det'},[
+          sectLabel(`${dateLabel} · ${done}/${rows.length}`),
+          React.createElement('div',{key:'l',style:{display:'flex',flexDirection:'column',gap:'8px'}}, rows.map((r,i)=>
+            React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'12px',padding:'12px 14px',borderRadius:'14px',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.06)'}},[
+              React.createElement('span',{key:'c',style:{width:'24px',height:'24px',flex:'none',borderRadius:'50%',background:r.done?G:'transparent',border:r.done?'none':'1.5px solid rgba(255,255,255,.2)',display:'flex',alignItems:'center',justifyContent:'center'}}, r.done?React.createElement('svg',{width:13,height:13,viewBox:'0 0 24 24',fill:'none',stroke:'#070707',strokeWidth:3,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M5 12.5l4 4L19 7'})):null),
+              React.createElement('span',{key:'n',style:{flex:1,fontSize:'15px',color:'#fff',textDecoration:r.done?'none':'none'}}, r.nm),
+              React.createElement('span',{key:'s',style:{fontSize:'12px',color:r.done?G:'rgba(255,255,255,.35)'}}, r.done?'Hecho':'No'),
+            ]))),
+        ]);
+      }
+    }
+    return React.createElement('div',{className:'vp',style:{maxHeight:'74vh',overflowY:'auto'}},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'4px'}}, mode==='journal'?'Histórico del diario':'Histórico de hábitos'),
+      React.createElement('div',{key:'s',style:{fontSize:'13px',color:'rgba(255,255,255,.45)',marginBottom:'18px'}},'Elige una fecha en el calendario.'),
+      yearRow, monthRow, wdayRow, grid,
+      React.createElement('div',{key:'sep',style:{height:'1px',background:'rgba(255,255,255,.08)',margin:'20px 0'}}),
+      detail,
+    ]);
+  }
+  sheetJournalEntry(G){
+    const j=this.JOURNALS[this.state.selJournal||0]; if(!j) return null;
+    return React.createElement('div',{className:'vp',style:{maxHeight:'74vh',overflowY:'auto'}},[
+      React.createElement('button',{key:'b',onClick:()=>this.setState({sheet:'journalHistory'}),style:{display:'flex',alignItems:'center',gap:'6px',background:'none',border:'none',color:'rgba(255,255,255,.5)',fontSize:'13px',fontFamily:'inherit',cursor:'pointer',marginBottom:'14px',padding:0}}, [this.icon('back','rgba(255,255,255,.5)'), React.createElement('span',{key:'t'},'Histórico')]),
+      React.createElement('div',{key:'d',style:{fontSize:'13px',letterSpacing:'1px',textTransform:'uppercase',color:G,marginBottom:'10px'}}, j.d),
+      React.createElement('p',{key:'t',style:{margin:0,fontSize:'16px',lineHeight:1.7,color:'#fff'}}, j.t),
+    ]);
+  }
+  sheetDelCom(G){
+    const c=this.state.communities[this.state.selCom];
+    return React.createElement('div',{},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'6px'}},'Eliminar comunidad'),
+      React.createElement('div',{key:'s',style:{fontSize:'14px',color:'rgba(255,255,255,.55)',lineHeight:1.5,marginBottom:'22px'}}, '¿Seguro que quieres eliminar “'+(c?c.n:'')+'”? Esta acción no se puede deshacer. Solo tú, como creador, puedes eliminarla.'),
+      React.createElement('button',{key:'d',onClick:()=>this.deleteCom(),style:{width:'100%',height:'52px',marginBottom:'10px',border:'none',borderRadius:'16px',background:'rgba(255,80,80,.14)',color:'#FF6B6B',fontSize:'15px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Eliminar comunidad'),
+      React.createElement('button',{key:'c',onClick:()=>this.setState({sheet:null}),style:{width:'100%',height:'52px',border:'1px solid rgba(255,255,255,.1)',borderRadius:'16px',background:'transparent',color:'#fff',fontSize:'15px',fontWeight:500,fontFamily:'inherit',cursor:'pointer'}},'Cancelar'),
+    ]);
+  }
+  deleteCom(){ this.setState(st => { const ci=st.selCom; const coms=st.communities.filter((_,i)=>i!==ci); const k=[...st.stack]; const p=k.pop()||'comunidad'; return {communities:coms, sheet:null, selCom:null, stack:k, screen:p}; }); }
+
+  // ---- niveles visual builders ----
+  buildCamino(sel, G){
+    const nodes = this.LEVELS.map(lv => {
+      const state = lv.n < sel ? 'done' : lv.n === sel ? 'current' : 'locked';
+      return { ...lv, state };
+    });
+    return React.createElement('div',{style:{position:'relative',display:'flex',flexDirection:'column-reverse',gap:'0'}},
+      nodes.map((lv,i) => {
+        const side = i % 2 === 0 ? 'flex-start' : 'flex-end';
+        const isCur = lv.state==='current';
+        const dotBg = lv.state==='locked' ? 'rgba(255,255,255,.05)' : `linear-gradient(135deg, ${lv.colors.edge}, ${lv.colors.deep})`;
+        return React.createElement('div',{key:lv.n,style:{display:'flex',justifyContent:side,position:'relative',paddingBottom:i===0?0:'4px'}},
+          React.createElement('button',{className:'lg',onClick:()=>this.setState({selLevel:lv.n}),style:{display:'flex',alignItems:'center',gap:'12px',flexDirection:side==='flex-end'?'row-reverse':'row',background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:'8px 0'}},[
+            React.createElement('div',{key:'d',style:{position:'relative',width:'46px',height:'46px',flex:'none',borderRadius:'50%',background:dotBg,border:isCur?`2px solid ${G}`:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center',boxShadow:isCur?`0 0 22px ${this.hexA(lv.colors.glow,0.7)}`:'none'}},[
+              isCur ? React.createElement('div',{key:'r',style:{position:'absolute',inset:'-6px',borderRadius:'50%',border:`2px solid ${G}`,animation:'pulseRing 2s ease-out infinite'}}) : null,
+              lv.state==='locked'
+                ? React.createElement('svg',{key:'lk',width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'rgba(255,255,255,.3)',strokeWidth:1.8},[React.createElement('rect',{key:1,x:5,y:11,width:14,height:9,rx:2}),React.createElement('path',{key:2,d:'M8 11V8a4 4 0 0 1 8 0v3'})])
+                : React.createElement('span',{key:'n',style:{fontSize:'15px',fontWeight:700,color:'#fff'}},lv.n),
+            ]),
+            React.createElement('div',{key:'lbl',style:{textAlign:side==='flex-end'?'right':'left'}},[
+              React.createElement('div',{key:'nm',style:{fontSize:'14px',fontWeight:600,color:lv.state==='locked'?'rgba(255,255,255,.35)':'#fff'}},lv.name),
+              React.createElement('div',{key:'st',style:{fontSize:'11px',color:isCur?G:'rgba(255,255,255,.35)'}}, lv.state==='done'?'Completado':isCur?'Actual':`Nivel ${lv.n}`),
+            ]),
+          ]));
+      }));
+  }
+  buildOrbita(selLv, sel, G){
+    const R = 130, cx=140, cy=140;
+    const rings = [50, 88, 126];
+    const dots = this.LEVELS.map((lv,i) => {
+      const ang = (i/9)*Math.PI*2 - Math.PI/2;
+      const rr = 60 + (i%3)*30;
+      return { x: cx + Math.cos(ang)*rr, y: cy + Math.sin(ang)*rr, lv };
+    });
+    return React.createElement('div',{style:{position:'relative',width:'280px',height:'280px'}},[
+      ...rings.map((r,i)=>React.createElement('div',{key:'r'+i,style:{position:'absolute',left:cx-r,top:cy-r,width:r*2,height:r*2,borderRadius:'50%',border:'1px solid rgba(255,255,255,.07)',animation:`spinSlow ${40+i*20}s linear infinite`}})),
+      React.createElement('div',{key:'core',style:{position:'absolute',left:cx-52,top:cy-52,width:'104px',height:'104px'}}, this.crystal(selLv,104)),
+      ...dots.map((d,i)=>{
+        const isCur = d.lv.n===sel; const done = d.lv.n<sel;
+        return React.createElement('button',{key:'d'+i,className:'lg',onClick:()=>this.setState({selLevel:d.lv.n}),style:{position:'absolute',left:d.x-15,top:d.y-15,width:'30px',height:'30px',borderRadius:'50%',border:isCur?`2px solid ${G}`:'1px solid rgba(255,255,255,.12)',background: done||isCur?`linear-gradient(135deg, ${d.lv.colors.edge}, ${d.lv.colors.deep})`:'rgba(20,20,24,.9)',color:'#fff',fontSize:'12px',fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'inherit',boxShadow:isCur?`0 0 16px ${this.hexA(d.lv.colors.glow,0.8)}`:'none',zIndex:isCur?3:2}}, d.lv.n);
+      }),
+    ]);
+  }
+  buildAscenso(sel, G){
+    return React.createElement(React.Fragment, {}, this.LEVELS.map(lv => {
+      const isCur = lv.n===sel; const done = lv.n<sel;
+      const fill = done||isCur ? `linear-gradient(90deg, ${lv.colors.deep}, ${lv.colors.edge})` : 'rgba(255,255,255,.04)';
+      return React.createElement('button',{key:lv.n,className:'lg',onClick:()=>this.setState({selLevel:lv.n}),style:{display:'flex',alignItems:'center',gap:'14px',width:'100%',padding:'14px 16px',borderRadius:'16px',border:isCur?`1px solid ${G}`:'1px solid rgba(255,255,255,.06)',background:fill,cursor:'pointer',fontFamily:'inherit',boxShadow:isCur?`0 0 20px ${this.hexA(lv.colors.glow,0.4)}`:'none'}},[
+        React.createElement('span',{key:'n',style:{width:'26px',fontSize:'15px',fontWeight:700,color: done||isCur?'#fff':'rgba(255,255,255,.4)'}},lv.n),
+        React.createElement('span',{key:'nm',style:{flex:1,textAlign:'left',fontSize:'15px',fontWeight:600,color: lv.n>sel?'rgba(255,255,255,.4)':'#fff'}},lv.name),
+        lv.n>sel
+          ? React.createElement('svg',{key:'lk',width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:'rgba(255,255,255,.3)',strokeWidth:1.8},[React.createElement('rect',{key:1,x:5,y:11,width:14,height:9,rx:2}),React.createElement('path',{key:2,d:'M8 11V8a4 4 0 0 1 8 0v3'})])
+          : React.createElement('div',{key:'dot',style:{width:'9px',height:'9px',borderRadius:'50%',background:isCur?G:lv.colors.edge}}),
+      ]);
+    }));
+  }
+  buildMap(G){
+    return React.createElement('div',{key:'globeHost',id:'globeHost',style:{position:'absolute',inset:0,background:'radial-gradient(120% 90% at 50% 30%, #0a0f1a, #03050a 70%)'}});
+  }
+  initGlobe(){
+    const host = document.getElementById('globeHost');
+    if(!host || !window.Globe || this._globe) return;
+    const G = this.props.accent || '#E6C77A';
+    const users = this.USERS;
+    const globe = window.Globe()(host)
+      .globeImageUrl('https://unpkg.com/three-globe@2.31.0/example/img/earth-night.jpg')
+      .bumpImageUrl('https://unpkg.com/three-globe@2.31.0/example/img/earth-topology.png')
+      .backgroundImageUrl('https://unpkg.com/three-globe@2.31.0/example/img/night-sky.png')
+      .atmosphereColor(G)
+      .atmosphereAltitude(0.18)
+      .width(host.clientWidth)
+      .height(host.clientHeight)
+      .pointsData(users)
+      .pointLat('lat').pointLng('lng')
+      .pointColor(d => d.me ? '#ffffff' : G)
+      .pointAltitude(d => d.me ? 0.09 : 0.055)
+      .pointRadius(d => d.me ? 0.42 : 0.32)
+      .pointResolution(18)
+      .pointLabel(d => `<div style="font-family:Satoshi,sans-serif;background:rgba(8,10,16,.85);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);padding:8px 12px;border-radius:12px;color:#fff"><div style="font-weight:700;font-size:13px">${d.nm}${d.me?' · tú':''}</div><div style="font-size:11px;color:${G};margin-top:2px">${d.city}</div></div>`)
+      .ringsData(users.filter(u=>u.me))
+      .ringLat('lat').ringLng('lng')
+      .ringColor(()=>(t)=>`rgba(255,255,255,${1-t})`)
+      .ringMaxRadius(3.5).ringPropagationSpeed(1.4).ringRepeatPeriod(1400)
+      .onPointClick(d => { this.flyToUser(d); });
+    this._globe = globe;
+    // initial framing on Spain + gentle auto-rotate
+    globe.pointOfView({ lat: 42, lng: 0, altitude: 1.9 }, 0);
+    const ctrl = globe.controls();
+    ctrl.autoRotate = true; ctrl.autoRotateSpeed = 0.35;
+    ctrl.enableDamping = true; ctrl.dampingFactor = 0.12;
+    ctrl.minDistance = 130; ctrl.maxDistance = 600;
+    ctrl.addEventListener('start', ()=>{ ctrl.autoRotate = false; });
+    this._globeResize = () => { if(this._globe && host.clientWidth){ this._globe.width(host.clientWidth).height(host.clientHeight); } };
+    window.addEventListener('resize', this._globeResize);
+  }
+  destroyGlobe(){
+    if(this._globe){ try{ this._globe._destructor && this._globe._destructor(); }catch(e){} this._globe = null; }
+    if(this._globeResize){ window.removeEventListener('resize', this._globeResize); this._globeResize = null; }
+  }
+  flyToUser(d){ if(this._globe){ this._globe.controls().autoRotate=false; this._globe.pointOfView({ lat:d.lat, lng:d.lng, altitude:1.0 }, 900); } this.setState({ mapSel:d }); }
+
+  // ---- comunidad ----
+  initials(nm){ return nm.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
+  icon(name,color){
+    const p={fill:'none',stroke:color,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'};
+    const wrap=(children)=>React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',...p},children);
+    switch(name){
+      case 'back': return wrap(React.createElement('path',{d:'M15 6l-6 6 6 6'}));
+      case 'chev': return wrap(React.createElement('path',{d:'M9 6l6 6-6 6'}));
+      case 'send': return React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:color},React.createElement('path',{d:'M3 11l18-8-8 18-2-7-8-3z'}));
+      case 'photo': return wrap([React.createElement('rect',{key:1,x:3,y:5,width:18,height:14,rx:2}),React.createElement('circle',{key:2,cx:8.5,cy:10,r:1.6}),React.createElement('path',{key:3,d:'M21 16l-5-5L5 19'})]);
+      case 'clip': return wrap(React.createElement('path',{d:'M21 11l-8.5 8.5a4 4 0 0 1-6-6L14 5a2.5 2.5 0 0 1 4 4l-8 8a1 1 0 0 1-1.4-1.4L16 8'}));
+      case 'file': return wrap([React.createElement('path',{key:1,d:'M7 3h7l5 5v13H7z'}),React.createElement('path',{key:2,d:'M14 3v5h5'})]);
+      case 'target': return wrap([React.createElement('circle',{key:1,cx:12,cy:12,r:8}),React.createElement('circle',{key:2,cx:12,cy:12,r:3})]);
+      case 'trash': return wrap([React.createElement('path',{key:1,d:'M4 7h16'}),React.createElement('path',{key:2,d:'M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2'}),React.createElement('path',{key:3,d:'M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13'})]);
+      default: return null;
+    }
+  }
+  openCom(i){ this.setState(st => ({ selCom:i, comTab:'foro', stack:[...st.stack, st.screen], screen:'comDetail' })); }
+  openMember(p){ this.setState({ sheet:'member', selMember:p }); }
+  sendMsg(kind){
+    const ci=this.state.selCom; if(ci==null) return;
+    let msg; const time='Ahora';
+    if(kind==='text'){ const t=(this.state.chatDraft||'').trim(); if(!t) return; msg={who:'Tú',me:true,text:t,kind:'text',time}; }
+    else if(kind==='photo'){ msg={who:'Tú',me:true,kind:'photo',time,c:['#9A8748','#D0AE5A']}; }
+    else { msg={who:'Tú',me:true,kind:'file',text:'documento.pdf',time}; }
+    this.setState(st => ({ communities: st.communities.map((c,i)=> i===ci?{...c,msgs:[...c.msgs,msg]}:c), chatDraft: kind==='text'?'':st.chatDraft }));
+  }
+  createCom(){
+    const d=this.state.newCom; if(!d || !(d.name||'').trim()){ this.setState({sheet:null}); return; }
+    const links=[];
+    if((d.lkWhats||'').trim()) links.push({k:'WhatsApp', h:d.lkWhats.trim()});
+    if((d.lkInsta||'').trim()) links.push({k:'Instagram', h:d.lkInsta.trim()});
+    if((d.lkWeb||'').trim()) links.push({k:'Web', h:d.lkWeb.trim()});
+    const nc={id:d.id||Date.now(), n:d.name.toUpperCase(), m:'1', a:'Nueva', owner:true, c:d.c||['#2C7D63','#155040'], desc:d.desc||'Comunidad recién creada.', goal:d.goal||'Define el objetivo del grupo.', links: links.length?links:null, parts:[{nm:this.props.userName||'Marco',lvl:this.cur(),c:['#9A8748','#D0AE5A']}], msgs:[]};
+    this.setState(st => ({ communities:[nc, ...st.communities], sheet:null, newCom:null, selCom:0, comTab:'foro', stack:[...st.stack, st.screen], screen:'comDetail' }));
+  }
+  avatarStack(parts){
+    return React.createElement('div',{style:{display:'flex'}}, parts.slice(0,4).map((p,i)=>
+      React.createElement('div',{key:i,style:{width:'26px',height:'26px',borderRadius:'50%',marginLeft:i?'-9px':0,border:'2px solid #0b0b0c',background:`linear-gradient(135deg, ${p.c[0]}, ${p.c[1]})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',fontWeight:700,color:'#fff'}}, this.initials(p.nm))));
+  }
+  buildSearch(G){
+    const q=(this.state.searchQuery||'').trim().toLowerCase();
+    const list = q ? this.USERS.filter(u => u.nm.toLowerCase().includes(q) || u.user.toLowerCase().includes(q)) : this.USERS;
+    if(list.length===0){
+      return React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:'12px',padding:'50px 20px',textAlign:'center'}},[
+        React.createElement('div',{key:'i',style:{width:'64px',height:'64px',borderRadius:'50%',background:'rgba(255,255,255,.05)',display:'flex',alignItems:'center',justifyContent:'center'}}, this.icon('chev','transparent')),
+        React.createElement('div',{key:'t',style:{fontSize:'15px',color:'rgba(255,255,255,.5)'}},'Sin resultados para “'+this.state.searchQuery+'”'),
+      ]);
+    }
+    return React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}}, list.map((u,i)=>{
+      const lv=this.LEVELS[u.lvl-1];
+      return React.createElement('button',{key:i,onClick:()=>this.openMember({nm:u.nm,lvl:u.lvl,c:u.c}),style:{display:'flex',alignItems:'center',gap:'14px',width:'100%',textAlign:'left',padding:'14px 16px',borderRadius:'18px',border:'1px solid rgba(255,255,255,.07)',background:'rgba(255,255,255,.03)',cursor:'pointer',fontFamily:'inherit'}},[
+        React.createElement('div',{key:'a',style:{width:'48px',height:'48px',borderRadius:'50%',flex:'none',background:`linear-gradient(135deg, ${u.c[0]}, ${u.c[1]})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'15px',fontWeight:700,color:'#fff'}}, this.initials(u.nm)),
+        React.createElement('div',{key:'t',style:{flex:1,minWidth:0}},[
+          React.createElement('div',{key:'u',style:{fontSize:'15px',fontWeight:600,color:'#fff'}}, u.user),
+          React.createElement('div',{key:'l',style:{fontSize:'12px',color:G,marginTop:'2px'}}, `Nivel ${u.lvl} · ${lv.name}`),
+          React.createElement('div',{key:'s',style:{display:'flex',gap:'6px',marginTop:'8px'}}, u.links.map((s,j)=>
+            React.createElement('span',{key:j,style:{display:'flex',alignItems:'center',gap:'5px',padding:'4px 9px',borderRadius:'9px',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.07)',fontSize:'11px',fontWeight:600,color:'rgba(255,255,255,.7)'}},[
+              React.createElement('span',{key:'d',style:{width:'14px',height:'14px',borderRadius:'5px',background:this.hexA(G,0.18),color:G,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'9px',fontWeight:700}}, s[0]),
+              s,
+            ]))),
+        ]),
+        this.icon('chev','rgba(255,255,255,.35)'),
+      ]);
+    }));
+  }
+  buildComList(G){    return React.createElement(React.Fragment, {}, this.state.communities.map((c,i)=>
+      React.createElement('button',{key:c.id,className:'lg glass',onClick:()=>this.openCom(i),style:{display:'block',width:'100%',textAlign:'left',padding:0,borderRadius:'22px',overflow:'hidden',border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)',cursor:'pointer',fontFamily:'inherit'}},[
+        React.createElement('div',{key:'cov',style:{height:'92px',background:`linear-gradient(135deg, ${c.c[0]}, ${c.c[1]})`,position:'relative',overflow:'hidden'}},[
+          React.createElement('image-slot',{key:'img','data-coverdisplay':'1',id:'comCover'+c.id,shape:'rect',style:{position:'absolute',inset:0,width:'100%',height:'100%',display:'block',pointerEvents:'none',background:'transparent'}}),
+          React.createElement('div',{key:'sh',style:{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(7,7,7,.9),transparent 65%)'}}),
+          React.createElement('div',{key:'act',style:{position:'absolute',top:'12px',right:'12px',padding:'5px 10px',borderRadius:'10px',background:'rgba(7,7,7,.45)',backdropFilter:'blur(6px)',fontSize:'11px',fontWeight:600,color:'#fff'}}, c.a),
+          React.createElement('div',{key:'nm',style:{position:'absolute',left:'16px',bottom:'10px',fontSize:'17px',fontWeight:800,color:'#fff',letterSpacing:'.3px'}}, c.n),
+        ]),
+        React.createElement('div',{key:'b',style:{padding:'12px 16px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}},[
+          React.createElement('div',{key:'l',style:{display:'flex',alignItems:'center',gap:'10px'}},[
+            this.avatarStack(c.parts),
+            React.createElement('span',{key:'m',style:{fontSize:'12px',color:'rgba(255,255,255,.5)'}}, `${c.m} miembros`),
+          ]),
+          this.icon('chev','rgba(255,255,255,.35)'),
+        ]),
+      ])));
+  }
+  msgBubble(m,i,G){
+    const me=m.me; const bg=me?G:'rgba(255,255,255,.06)'; const col=me?'#070707':'#fff';
+    let inner;
+    if(m.kind==='photo'){
+      inner=React.createElement('div',{style:{width:'150px',height:'100px',borderRadius:'12px',background:`linear-gradient(135deg, ${m.c?m.c[0]:'#4787BE'}, ${m.c?m.c[1]:'#28567B'})`,display:'flex',alignItems:'flex-end',padding:'8px'}}, React.createElement('span',{style:{fontSize:'11px',color:'rgba(255,255,255,.85)'}},'Foto'));
+    } else if(m.kind==='file'){
+      inner=React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},[
+        React.createElement('div',{key:'i',style:{width:'34px',height:'34px',borderRadius:'9px',flex:'none',background:me?'rgba(7,7,7,.15)':'rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}, this.icon('file',me?'#070707':'#fff')),
+        React.createElement('span',{key:'t',style:{fontSize:'13px',fontWeight:600,color:col}}, m.text),
+      ]);
+    } else {
+      inner=React.createElement('span',{style:{fontSize:'14px',lineHeight:1.45,color:col}}, m.text);
+    }
+    const bubble=React.createElement('div',{key:'b',style:{maxWidth:'76%',padding:m.kind==='photo'?'5px':'10px 13px',borderRadius:me?'16px 16px 4px 16px':'16px 16px 16px 4px',background:m.kind==='photo'?'transparent':bg}}, inner);
+    const meta=React.createElement('div',{key:'m',style:{fontSize:'10px',color:'rgba(255,255,255,.32)',margin: me?'4px 4px 0 0':'4px 0 0 4px'}}, (me?'':m.who+' · ')+m.time);
+    return React.createElement('div',{key:i,style:{display:'flex',flexDirection:'column',alignItems:me?'flex-end':'flex-start'}}, [bubble, meta]);
+  }
+  buildComDetail(G){
+    const c=this.state.communities[this.state.selCom]; if(!c) return null;
+    const links = c.links || [
+      {k:'Web', h:'1212.app/'+c.n.toLowerCase().replace(/[^a-z0-9]/g,'')},
+      {k:'Instagram', h:'@'+c.n.toLowerCase().replace(/[^a-z0-9]/g,'')},
+      {k:'Recursos', h:'Materiales del grupo'},
+    ];
+    const header=React.createElement('div',{key:'h',style:{position:'absolute',top:0,left:0,right:0,height:'92px',zIndex:6,display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:'12px',padding:'0 18px 10px',background:'linear-gradient(to bottom, rgba(7,7,7,.92), rgba(7,7,7,.5) 70%, transparent)'}},[
+      React.createElement('div',{key:'l',style:{display:'flex',alignItems:'center',gap:'12px',minWidth:0}},[
+        React.createElement('button',{key:'b',onClick:()=>this.back(),style:{width:'40px',height:'40px',flex:'none',borderRadius:'50%',border:'1px solid rgba(255,255,255,.14)',background:'rgba(7,7,7,.5)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}, this.icon('back','#fff')),
+        React.createElement('span',{key:'t',style:{fontSize:'17px',fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}, c.n),
+      ]),
+      c.owner
+        ? React.createElement('button',{key:'del',onClick:()=>this.setState({sheet:'delCom'}),style:{width:'40px',height:'40px',flex:'none',borderRadius:'50%',border:'1px solid rgba(255,80,80,.3)',background:'rgba(255,80,80,.12)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}, this.icon('trash','#FF6B6B'))
+        : React.createElement('div',{key:'sp',style:{width:'40px',flex:'none'}}),
+    ]);
+    // header image — sólo el creador puede configurarla/modificarla
+    const coverImg = c.owner
+      ? React.createElement('image-slot',{key:'img',id:'comCover'+c.id,shape:'rect',placeholder:'Toca para añadir imagen de cabecera',style:{display:'block',width:'100%',height:'180px',background:'transparent'}})
+      : React.createElement('image-slot',{key:'img','data-coverdisplay':'1',id:'comCover'+c.id,shape:'rect',style:{display:'block',width:'100%',height:'180px',pointerEvents:'none',background:'transparent'}});
+    const cover=React.createElement('div',{key:'cover',style:{position:'relative',height:'180px',background:`linear-gradient(135deg, ${c.c[0]}, ${c.c[1]})`,overflow:'hidden'}},[
+      coverImg,
+      React.createElement('div',{key:'sh',style:{position:'absolute',inset:0,background:'linear-gradient(to top,#070707,transparent 55%)',pointerEvents:'none'}}),
+      React.createElement('div',{key:'nm',style:{position:'absolute',left:'20px',bottom:'12px',right:'20px',pointerEvents:'none'}},[
+        React.createElement('div',{key:'t',style:{fontSize:'23px',fontWeight:800,color:'#fff',letterSpacing:'.3px'}}, c.n),
+        React.createElement('div',{key:'a',style:{fontSize:'12px',letterSpacing:'2px',textTransform:'uppercase',color:G,marginTop:'4px'}}, `Red privada · ${c.a}`),
+      ]),
+    ]);
+    const sect=(t)=>React.createElement('div',{style:{fontSize:'12px',letterSpacing:'1px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',margin:'4px 0 12px'}},t);
+    const linksBlock=React.createElement('div',{key:'links',style:{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'20px'}}, links.map((s,i)=>
+      React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'12px',height:'48px',borderRadius:'13px',border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)',padding:'0 14px'}},[
+        React.createElement('span',{key:'i',style:{width:'28px',height:'28px',borderRadius:'9px',background:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:700,color:G,flex:'none'}}, s.k[0]),
+        React.createElement('span',{key:'k',style:{fontSize:'14px',color:'#fff',fontWeight:500}}, s.k),
+        React.createElement('span',{key:'h',style:{marginLeft:'auto',fontSize:'13px',color:'rgba(255,255,255,.45)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}, s.h),
+      ])));
+    const memberList=React.createElement('div',{key:'mem',style:{display:'flex',flexDirection:'column',gap:'8px'}}, c.parts.map((p,i)=>
+      React.createElement('button',{key:i,onClick:()=>this.openMember(p),style:{display:'flex',alignItems:'center',gap:'12px',padding:'10px 12px',borderRadius:'16px',border:'1px solid rgba(255,255,255,.07)',background:'rgba(255,255,255,.03)',cursor:'pointer',fontFamily:'inherit'}},[
+        React.createElement('div',{key:'a',style:{width:'42px',height:'42px',borderRadius:'50%',flex:'none',background:`linear-gradient(135deg, ${p.c[0]}, ${p.c[1]})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',fontWeight:700,color:'#fff'}}, this.initials(p.nm)),
+        React.createElement('div',{key:'t',style:{flex:1,textAlign:'left'}},[
+          React.createElement('div',{key:'n',style:{fontSize:'15px',fontWeight:600,color:'#fff'}}, p.nm),
+          React.createElement('div',{key:'l',style:{fontSize:'12px',color:G}}, `Nivel ${p.lvl} · ${this.LEVELS[p.lvl-1].name}`),
+        ]),
+        this.icon('chev','rgba(255,255,255,.35)'),
+      ])));
+    const info=React.createElement('div',{key:'info',style:{padding:'18px 20px 8px'}},[
+      React.createElement('p',{key:'desc',style:{margin:'0 0 18px',fontSize:'15px',lineHeight:1.55,color:'rgba(255,255,255,.72)'}}, c.desc),
+      sect('Enlaces'),
+      linksBlock,
+      React.createElement('div',{key:'goal',style:{display:'flex',gap:'12px',padding:'14px 16px',borderRadius:'16px',background:'rgba(230,199,122,.07)',border:'1px solid rgba(230,199,122,.2)',marginBottom:'22px'}},[
+        React.createElement('div',{key:'i',style:{flex:'none',marginTop:'1px'}}, this.icon('target',G)),
+        React.createElement('div',{key:'tx'},[
+          React.createElement('div',{key:'l',style:{fontSize:'11px',letterSpacing:'1px',textTransform:'uppercase',color:G,marginBottom:'3px'}},'Objetivo'),
+          React.createElement('div',{key:'g',style:{fontSize:'14px',color:'#fff',lineHeight:1.4}}, c.goal),
+        ]),
+      ]),
+      sect(`Participantes · ${c.m}`),
+      memberList,
+    ]);
+    const scroll=React.createElement('div',{key:'sc',className:'vp',style:{position:'absolute',top:0,left:0,right:0,bottom:'20px',overflowY:'auto'}},[
+      cover, info,
+    ]);
+    return React.createElement('div',{style:{position:'absolute',inset:0}}, [header, scroll]);
+  }
+  sheetMember(G){
+    const p=this.state.selMember; if(!p) return null;
+    const lv=this.LEVELS[p.lvl-1];
+    const slug=p.nm.toLowerCase().replace(/[^a-z0-9]/g,'');
+    const userh = p.user || ('@'+slug);
+    const h=(s)=>userh;
+    const seed=p.nm.charCodeAt(0)+(p.nm.charCodeAt(1)||66);
+    const phone=`+34 6${10+seed%89} ${100+(seed*7)%900} ${100+(seed*13)%900}`;
+    const cities=['Madrid','Barcelona','Valencia','Sevilla','Bilbao','Málaga'];
+    const city=p.city || cities[seed%cities.length];
+    const since=['2022','2023','2024'][seed%3];
+    const infoRow=(label,val,icon)=>React.createElement('div',{key:label,style:{display:'flex',alignItems:'center',gap:'12px',padding:'13px 14px',borderRadius:'13px',border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)'}},[
+      React.createElement('span',{key:'i',style:{width:'30px',height:'30px',borderRadius:'9px',background:this.hexA(G,0.12),display:'flex',alignItems:'center',justifyContent:'center',flex:'none'}}, icon),
+      React.createElement('div',{key:'t',style:{flex:1,minWidth:0}},[
+        React.createElement('div',{key:'l',style:{fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)'}}, label),
+        React.createElement('div',{key:'v',style:{fontSize:'15px',fontWeight:600,color:'#fff',marginTop:'2px'}}, val),
+      ]),
+    ]);
+    return React.createElement('div',{className:'vp',style:{maxHeight:'74vh',overflowY:'auto'}},[
+      React.createElement('div',{key:'top',style:{display:'flex',alignItems:'center',gap:'14px',marginBottom:'18px'}},[
+        React.createElement('div',{key:'a',style:{width:'58px',height:'58px',borderRadius:'50%',flex:'none',background:`linear-gradient(135deg, ${p.c[0]}, ${p.c[1]})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:700,color:'#fff'}}, this.initials(p.nm)),
+        React.createElement('div',{key:'t'},[
+          React.createElement('div',{key:'n',style:{fontSize:'19px',fontWeight:700,color:'#fff'}}, p.nm),
+          React.createElement('div',{key:'u',style:{fontSize:'13px',color:'rgba(255,255,255,.5)',marginTop:'1px'}}, userh),
+          React.createElement('div',{key:'l',style:{fontSize:'13px',color:G,marginTop:'3px'}}, `Nivel ${p.lvl} · ${lv.name}`),
+        ]),
+      ]),
+      React.createElement('div',{key:'info',style:{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'18px'}},[
+        infoRow('Teléfono', phone, React.createElement('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'},React.createElement('path',{d:'M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z'})) ),
+        infoRow('Ubicación', city, React.createElement('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('path',{key:1,d:'M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z'}),React.createElement('circle',{key:2,cx:12,cy:10,r:2.6})]) ),
+        infoRow('Miembro desde', since, React.createElement('svg',{width:16,height:16,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('rect',{key:1,x:3,y:4,width:18,height:17,rx:3}),React.createElement('path',{key:2,d:'M3 9h18M8 2v3M16 2v3'})]) ),
+      ]),
+      React.createElement('div',{key:'lksec',style:{fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:'10px'}},'Redes'),
+      React.createElement('div',{key:'links',style:{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'4px'}}, ['Instagram','LinkedIn','X','YouTube'].map((s,i)=>
+        React.createElement('div',{key:i,style:{display:'flex',alignItems:'center',gap:'12px',height:'46px',borderRadius:'13px',border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)',padding:'0 14px'}},[
+          React.createElement('span',{key:'i',style:{width:'26px',height:'26px',borderRadius:'8px',background:'rgba(255,255,255,.06)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'11px',fontWeight:700,color:G,flex:'none'}}, s[0]),
+          React.createElement('span',{key:'k',style:{fontSize:'14px',color:'rgba(255,255,255,.75)'}}, s),
+          React.createElement('span',{key:'h',style:{marginLeft:'auto',fontSize:'13px',color:'rgba(255,255,255,.4)'}}, h()),
+        ]))),
+    ]);
+  }
+  comField(label,val,on,ph){ return React.createElement('div',{key:label,style:{marginBottom:'12px'}},[
+    React.createElement('label',{key:'l',style:{display:'block',fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:'6px'}}, label),
+    React.createElement('input',{key:'i',value:val,onInput:on,placeholder:ph,style:{width:'100%',height:'50px',borderRadius:'14px',border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.04)',color:'#fff',fontSize:'15px',padding:'0 16px',outline:'none',fontFamily:'inherit'}}),
+  ]); }
+  comFieldArea(label,val,on,ph){ return React.createElement('div',{key:label,style:{marginBottom:'12px'}},[
+    React.createElement('label',{key:'l',style:{display:'block',fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:'6px'}}, label),
+    React.createElement('textarea',{key:'i',value:val,onInput:on,placeholder:ph,style:{width:'100%',minHeight:'70px',borderRadius:'14px',border:'1px solid rgba(255,255,255,.1)',background:'rgba(255,255,255,.04)',color:'#fff',fontSize:'15px',padding:'12px 16px',outline:'none',fontFamily:'inherit',resize:'none',lineHeight:1.5}}),
+  ]); }
+  sheetNewCom(G){
+    const d=this.state.newCom||{id:0,name:'',desc:'',goal:'',c:['#2C7D63','#155040']};
+    const setF=(k,v)=>this.setState(st=>({newCom:{...(st.newCom||{name:'',desc:'',goal:'',c:['#2C7D63','#155040']}),[k]:v}}));
+    return React.createElement('div',{className:'vp',style:{maxHeight:'74vh',overflowY:'auto'}},[
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'4px'}},'Crear comunidad'),
+      React.createElement('div',{key:'s',style:{fontSize:'13px',color:'rgba(255,255,255,.45)',marginBottom:'18px'}},'Un espacio privado para tu proyecto.'),
+      React.createElement('div',{key:'covl',style:{fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:'6px'}},'Imagen de cabecera'),
+      React.createElement('div',{key:'cov',style:{position:'relative',height:'110px',borderRadius:'16px',overflow:'hidden',background:`linear-gradient(135deg, ${d.c[0]}, ${d.c[1]})`,marginBottom:'16px'}},[
+        React.createElement('image-slot',{key:'img',id:'comCover'+d.id,shape:'rounded',radius:'16',placeholder:'Arrastra o toca para subir',style:{display:'block',width:'100%',height:'110px',background:'transparent'}}),
+        React.createElement('div',{key:'nm',style:{position:'absolute',left:'12px',bottom:'10px',fontSize:'15px',fontWeight:800,color:'#fff',letterSpacing:'.3px',pointerEvents:'none',textShadow:'0 1px 6px rgba(0,0,0,.5)'}}, (d.name||'NOMBRE').toUpperCase()),
+      ]),
+      this.comField('Nombre', d.name, (e)=>setF('name',e.target.value), 'Ej. CONSULTORÍA'),
+      this.comFieldArea('Descripción', d.desc, (e)=>setF('desc',e.target.value), 'De qué trata la comunidad…'),
+      this.comField('Objetivo', d.goal, (e)=>setF('goal',e.target.value), 'La meta común del grupo'),
+      React.createElement('div',{key:'lksec',style:{fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',margin:'10px 0 4px'}},'Enlaces (opcional)'),
+      React.createElement('div',{key:'lkhint',style:{fontSize:'12px',color:'rgba(255,255,255,.35)',marginBottom:'12px'}},'Añade perfiles o recursos. Puedes dejarlos en blanco.'),
+      this.comField('WhatsApp', d.lkWhats||'', (e)=>setF('lkWhats',e.target.value), 'Enlace de invitación'),
+      this.comField('Instagram', d.lkInsta||'', (e)=>setF('lkInsta',e.target.value), '@usuario'),
+      this.comField('Web / otro', d.lkWeb||'', (e)=>setF('lkWeb',e.target.value), 'https://…'),
+      React.createElement('button',{key:'b',onClick:()=>this.createCom(),style:{width:'100%',height:'54px',marginTop:'8px',border:'none',borderRadius:'18px',background:G,color:'#070707',fontSize:'16px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Crear comunidad'),
+    ]);
+  }
+}
+</script>
+</body>
+</html>

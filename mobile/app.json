@@ -33,7 +33,8 @@
       "expo-camera",
       "expo-image-picker",
       "expo-location",
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {
       "apiBaseUrl": "http://localhost:8787",
