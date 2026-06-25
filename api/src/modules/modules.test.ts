@@ -58,6 +58,17 @@ d("módulos Fase 4 (integración)", () => {
     await expect(profiles.getPublicProfile(uname)).rejects.toBeInstanceOf(profiles.NotFoundError);
   });
 
+  it("profiles: búsqueda parcial encuentra públicos, no privados", async () => {
+    const tag = "srch" + Math.random().toString(36).slice(2, 6);
+    await profiles.updateProfile(uid, { username: tag + "pub", displayName: "Buscable", isPublic: true });
+    await profiles.updateProfile(uid2, { username: tag + "priv", isPublic: false });
+    const r = await profiles.searchProfiles(tag, 20) as any[];
+    expect(r.find((x) => x.username === tag + "pub")).toBeTruthy();
+    expect(r.find((x) => x.username === tag + "priv")).toBeFalsy();
+    // término demasiado corto → vacío
+    expect((await profiles.searchProfiles("a", 20)).length).toBe(0);
+  });
+
   it("location: upsert + nearby respeta sharing", async () => {
     // uid en Madrid, exacto
     await profiles.updateProfile(uid, { locationSharing: "exact" });

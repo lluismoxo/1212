@@ -1,30 +1,32 @@
-import { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, TextInput, Pressable, FlatList, StyleSheet } from "react-native";
 import { router } from "expo-router";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
 import { colors } from "@/theme/tokens";
 
-interface PublicProfile {
-  username: string; display_name: string; city: string | null;
-  level: { current_level: number; name: string } | null;
+interface Result {
+  username: string; display_name: string; avatar_url: string | null;
+  city: string | null; current_level: number | null;
 }
 
 export default function Search() {
   const [q, setQ] = useState("");
-  const [result, setResult] = useState<PublicProfile | null>(null);
-  const [notFound, setNotFound] = useState(false);
+  const [results, setResults] = useState<Result[]>([]);
+  const [searched, setSearched] = useState(false);
 
-  async function go() {
-    const username = q.trim().replace(/^@/, "").toLowerCase();
-    if (!username) return;
-    setResult(null); setNotFound(false);
-    try {
-      const p = await api<PublicProfile>(`/profiles/${username}`, { auth: false });
-      setResult(p);
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 404) setNotFound(true);
-    }
-  }
+  // búsqueda parcial con debounce
+  useEffect(() => {
+    const term = q.trim();
+    if (term.length < 2) { setResults([]); setSearched(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        const r = await api<Result[]>(`/profiles/search?q=${encodeURIComponent(term)}`);
+        setResults(r);
+        setSearched(true);
+      } catch { setResults([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [q]);
 
   return (
     <View style={styles.c}>
@@ -36,22 +38,30 @@ export default function Search() {
       <View style={styles.searchBox}>
         <TextInput
           style={styles.input}
-          placeholder="Nombre de usuario exacto…"
+          placeholder="Nombre o usuario…"
           placeholderTextColor="rgba(255,255,255,0.3)"
           autoCapitalize="none"
           value={q}
           onChangeText={setQ}
-          onSubmitEditing={go}
         />
       </View>
-      {result && (
-        <Pressable style={styles.card} onPress={() => router.push(`/u/${result.username}`)}>
-          <Text style={styles.name}>{result.display_name}</Text>
-          <Text style={styles.handle}>@{result.username}</Text>
-          {result.level ? <Text style={styles.level}>Nivel {result.level.current_level} · {result.level.name}</Text> : null}
-        </Pressable>
-      )}
-      {notFound && <Text style={styles.empty}>No existe ese usuario (o su perfil es privado).</Text>}
+      <FlatList
+        contentContainerStyle={{ paddingHorizontal: 20 }}
+        data={results}
+        keyExtractor={(r) => r.username}
+        renderItem={({ item }) => (
+          <Pressable style={styles.card} onPress={() => router.push(`/u/${item.username}`)}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{item.display_name}</Text>
+              <Text style={styles.handle}>@{item.username}{item.city ? ` · ${item.city}` : ""}</Text>
+            </View>
+            <Text style={styles.level}>Nv {item.current_level ?? 1}</Text>
+          </Pressable>
+        )}
+        ListEmptyComponent={
+          searched ? <Text style={styles.empty}>Sin resultados.</Text> : null
+        }
+      />
     </View>
   );
 }
@@ -63,9 +73,9 @@ const styles = StyleSheet.create({
   title: { color: "#fff", fontSize: 16, fontWeight: "600" },
   searchBox: { padding: 20 },
   input: { height: 52, borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)", backgroundColor: colors.card, color: "#fff", paddingHorizontal: 18 },
-  card: { marginHorizontal: 20, padding: 18, borderRadius: 18, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-  name: { color: "#fff", fontSize: 17, fontWeight: "600" },
-  handle: { color: colors.textMuted, fontSize: 14, marginTop: 2 },
-  level: { color: colors.gold, fontSize: 13, marginTop: 6 },
-  empty: { color: colors.textFaint, textAlign: "center", marginTop: 30, paddingHorizontal: 30 },
+  card: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, marginBottom: 10 },
+  name: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  handle: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+  level: { color: colors.gold, fontSize: 13 },
+  empty: { color: colors.textFaint, textAlign: "center", marginTop: 30 },
 });

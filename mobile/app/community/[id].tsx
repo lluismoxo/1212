@@ -15,15 +15,21 @@ export default function CommunityDetail() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [draft, setDraft] = useState("");
 
-  async function load() {
+  async function loadMessages() {
     try {
-      const c = await api<{ name: string }>(`/communities/${id}`);
-      setName(c.name);
       const m = await api<Msg[]>(`/communities/${id}/messages?limit=50`);
       setMsgs(m);
     } catch {}
   }
-  useEffect(() => { if (id) load(); }, [id]);
+
+  // nombre una vez; mensajes con refresco (polling cada 4s) — "tiempo casi real"
+  useEffect(() => {
+    if (!id) return;
+    api<{ name: string }>(`/communities/${id}`).then((c) => setName(c.name)).catch(() => {});
+    loadMessages();
+    const iv = setInterval(loadMessages, 4000);
+    return () => clearInterval(iv);
+  }, [id]);
 
   async function send() {
     if (!draft.trim()) return;
@@ -31,7 +37,7 @@ export default function CommunityDetail() {
     setDraft("");
     try {
       await api(`/communities/${id}/messages`, { method: "POST", body: { kind: "text", body: text } });
-      await load();
+      await loadMessages();
     } catch {}
   }
 
