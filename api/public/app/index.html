@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>1212 — Evoluciona</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700,900&display=swap" rel="stylesheet">
+<style>
+  /* === estilos exactos del prototipo Claude Design === */
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#070707;font-family:'Satoshi',-apple-system,system-ui,sans-serif;color:#fff;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:0;height:0}
+  .vp{-ms-overflow-style:none;scrollbar-width:none}
+  input,textarea,button{font-family:inherit}
+  input::placeholder,textarea::placeholder{color:rgba(255,255,255,.3)}
+  @keyframes screenIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:.92}}
+  @keyframes riseFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  .glass{position:relative;background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.05) 50%,rgba(255,255,255,.03));backdrop-filter:blur(18px) saturate(1.5) brightness(1.1);-webkit-backdrop-filter:blur(18px) saturate(1.5) brightness(1.1);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 1px rgba(255,255,255,.55),inset 0 -12px 26px -10px rgba(255,255,255,.10),0 14px 34px -14px rgba(0,0,0,.5)}
+  .glass::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.05) 36%,transparent 58%)}
+  .glass>*{position:relative;z-index:1}
+  .lg{-webkit-tap-highlight-color:transparent}
+  /* layout app */
+  #app{min-height:100vh;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+  .screen{position:relative;min-height:100vh;animation:screenIn .5s ease;padding:54px 22px 110px}
+  .spinner{width:34px;height:34px;border:3px solid rgba(255,255,255,.15);border-top-color:#E6C77A;border-radius:50%;animation:spinSlow .8s linear infinite}
+  .center{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px}
+  .btn{height:56px;border:none;border-radius:18px;background:#fff;color:#070707;font-size:16px;font-weight:600;cursor:pointer;width:100%}
+  .btn-ghost{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff}
+  .input{width:100%;height:54px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#fff;font-size:15px;padding:0 18px;outline:none}
+  .h1{margin:0;font-size:27px;font-weight:700;letter-spacing:-.4px}
+  .muted{color:rgba(255,255,255,.5)}
+  .faint{color:rgba(255,255,255,.4)}
+  .gold{color:#E6C77A}
+  /* bottom nav */
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:90px;z-index:70;background:linear-gradient(to top,#070707 55%,rgba(7,7,7,.75) 80%,transparent);backdrop-filter:blur(12px);display:flex;align-items:flex-start;justify-content:space-around;padding:14px 22px 0}
+  .nav button{background:none;border:none;cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;color:rgba(255,255,255,.4);font-size:11px;font-weight:500}
+  .nav button.on{color:#fff}
+</style>
+</head>
+<body>
+<div id="app"><div class="center"><div class="spinner"></div></div></div>
+<script src="./crystals.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

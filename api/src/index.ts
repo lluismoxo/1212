@@ -25,6 +25,8 @@ const app = new Hono();
 // El diseño (prototipo Claude Design) se sirve estático en /design.
 // Va ANTES de secureHeaders: usa estilos/scripts inline que la CSP bloquearía.
 app.use("/design/*", serveStatic({ root: "./public" }));
+// Web-app propia (diseño del prototipo + datos reales del backend).
+app.use("/app/*", serveStatic({ root: "./public" }));
 
 // Cabeceras de seguridad (CSP, X-Frame, nosniff, HSTS en prod, etc.)
 app.use("*", secureHeaders());
