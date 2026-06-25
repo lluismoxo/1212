@@ -25,6 +25,23 @@ export async function getOwnProfile(userId: string) {
   return rows[0];
 }
 
+// Búsqueda parcial de perfiles públicos por username o nombre.
+// Acotada (page size) y solo públicos no borrados (anti-scraping/privacidad).
+export async function searchProfiles(query: string, limit: number) {
+  const q = query.trim().replace(/^@/, "");
+  if (q.length < 2) return [];
+  const like = `%${q}%`;
+  const lim = Math.min(Math.max(limit, 1), 30);
+  return sql`
+    select p.username, p.display_name, p.avatar_url, p.city, ul.current_level
+    from public.profiles p
+    left join public.user_levels ul on ul.profile_id = p.id
+    where p.is_public = true and p.deleted_at is null
+      and (p.username ilike ${like} or p.display_name ilike ${like})
+    order by p.username
+    limit ${lim}`;
+}
+
 // Perfil público por username (solo si is_public y no borrado).
 export async function getPublicProfile(username: string) {
   const rows = await sql`

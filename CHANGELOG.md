@@ -4,6 +4,11 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/). Sin versionar
 
 ## [Sin publicar]
 
+### Added — Búsqueda parcial y refresco de chat (2026-06-25)
+- **Búsqueda parcial de perfiles** (`GET /profiles/search?q=`): ILIKE sobre username/display_name, solo públicos, acotada (máx 30). Índice trigram (migración 013). UI con debounce y lista de resultados. Test: encuentra públicos, no privados, ignora términos <2 chars.
+- **Chat con refresco**: la pantalla de comunidad hace polling cada 4s (tiempo casi real, sin WebSocket).
+- 39 tests verde; E2E de búsqueda verificado.
+
 ### Fixed — Correcciones de la auditoría funcional (2026-06-24)
 - **Motor de niveles (regla central, antes inexistente):** migración 010 con `month_compliance()` y `recalc_level()`; sube de nivel solo con ≥70% de hábitos en un mes natural completo. Si el usuario entra a mitad de mes, esa fracción no cuenta (empieza el día 1 del mes siguiente, `level_tracking_since`). Endpoint `GET /levels/me` (recalcula server-side; el cliente no puede escribir el nivel). 5 tests (69/70/71%, idempotencia, sin bypass).
 - **7 comunidades iniciales sembradas** (migración 011): CONSULTORÍA, IA, ECOMMERCE, MARCA PERSONAL, CREACIÓN DE CONTENIDO, FINANZAS, RESELLING.

@@ -4,6 +4,7 @@ import { requireAuth } from "../../middleware/auth.js";
 import {
   getOwnProfile,
   getPublicProfile,
+  searchProfiles,
   updateProfile,
   setSocialLinks,
   completeOnboarding,
@@ -18,6 +19,14 @@ function handle(e: unknown, c: import("hono").Context) {
   if (e instanceof ValidationError) return c.json({ error: "validation", message: e.message }, 422);
   return c.json({ error: "server_error" }, 500);
 }
+
+// GET /profiles/search?q= — búsqueda parcial de perfiles públicos
+profileRoutes.get("/search", requireAuth, async (c) => {
+  const q = z.object({ q: z.string().min(2).max(50), limit: z.coerce.number().default(20) })
+    .safeParse(c.req.query());
+  if (!q.success) return c.json({ error: "bad_request" }, 400);
+  return c.json(await searchProfiles(q.data.q, q.data.limit));
+});
 
 // GET /profiles/me — perfil propio
 profileRoutes.get("/me", requireAuth, async (c) => {
