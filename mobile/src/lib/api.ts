@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import * as SecureStore from "expo-secure-store";
+import { storage } from "./storage";
 
 const BASE = (Constants.expoConfig?.extra?.apiBaseUrl as string) ?? "http://localhost:8787";
 
@@ -7,15 +7,15 @@ const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
 
 export async function setTokens(accessToken: string, refreshToken: string) {
-  await SecureStore.setItemAsync(ACCESS_KEY, accessToken);
-  await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
+  await storage.set(ACCESS_KEY, accessToken);
+  await storage.set(REFRESH_KEY, refreshToken);
 }
 export async function clearTokens() {
-  await SecureStore.deleteItemAsync(ACCESS_KEY);
-  await SecureStore.deleteItemAsync(REFRESH_KEY);
+  await storage.del(ACCESS_KEY);
+  await storage.del(REFRESH_KEY);
 }
 export async function getRefreshToken() {
-  return SecureStore.getItemAsync(REFRESH_KEY);
+  return storage.get(REFRESH_KEY);
 }
 
 export class ApiError extends Error {
@@ -26,7 +26,7 @@ export class ApiError extends Error {
 
 // Intenta refrescar el access token usando el refresh guardado.
 async function tryRefresh(): Promise<string | null> {
-  const refreshToken = await SecureStore.getItemAsync(REFRESH_KEY);
+  const refreshToken = await storage.get(REFRESH_KEY);
   if (!refreshToken) return null;
   const res = await fetch(`${BASE}/auth/refresh`, {
     method: "POST",
@@ -60,7 +60,7 @@ export async function api<T = unknown>(
     });
   }
 
-  let token = auth ? await SecureStore.getItemAsync(ACCESS_KEY) : null;
+  let token = auth ? await storage.get(ACCESS_KEY) : null;
   let res = await call(token);
 
   if (res.status === 401 && auth) {

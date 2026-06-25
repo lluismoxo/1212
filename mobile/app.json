@@ -21,14 +21,19 @@
     },
     "android": {
       "package": "com.luismoxo.app1212",
-      "permissions": ["CAMERA", "READ_MEDIA_IMAGES", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-camera",
       "expo-image-picker",
-      "expo-location"
+      "expo-location",
+      "expo-asset"
     ],
     "extra": {
       "apiBaseUrl": "http://localhost:8787",
