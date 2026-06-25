@@ -2,19 +2,28 @@ import { sql } from "../../db/client.js";
 
 export class NotFoundError extends Error {}
 
-export async function listTasks(userId: string, dueDate?: string) {
-  if (dueDate) {
-    return sql`select id, text, done, due_date, position from public.tasks
-      where profile_id = ${userId} and due_date = ${dueDate} order by position, created_at`;
-  }
-  return sql`select id, text, done, due_date, position from public.tasks
-    where profile_id = ${userId} order by position, created_at`;
+// Tareas SOLO del día (regla de producto: sin histórico).
+// La fecha la fija el servidor (current_date), no el cliente.
+// Al listar, se purgan las tareas de días anteriores (no se guarda histórico).
+
+async function purgeOld(userId: string) {
+  await sql`delete from public.tasks
+           where profile_id = ${userId}
+             and due_date is not null and due_date < current_date`;
 }
 
-export async function createTask(userId: string, text: string, dueDate?: string | null) {
+export async function listTasks(userId: string) {
+  await purgeOld(userId);
+  return sql`
+    select id, text, done, due_date, position from public.tasks
+    where profile_id = ${userId} and (due_date = current_date or due_date is null)
+    order by position, created_at`;
+}
+
+export async function createTask(userId: string, text: string) {
   const rows = await sql`
     insert into public.tasks (profile_id, text, due_date)
-    values (${userId}, ${text}, ${dueDate ?? null})
+    values (${userId}, ${text}, current_date)
     returning id, text, done, due_date, position`;
   return rows[0];
 }

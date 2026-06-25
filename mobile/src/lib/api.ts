@@ -86,6 +86,28 @@ export async function login(provider: "google" | "apple", idToken: string) {
   await setTokens(data.accessToken, data.refreshToken);
 }
 
+// Registro con email + contraseña.
+export async function register(email: string, password: string, name: string) {
+  const data = await api<{ accessToken: string; refreshToken: string }>("/auth/register", {
+    method: "POST", body: { email, password, name }, auth: false,
+  });
+  await setTokens(data.accessToken, data.refreshToken);
+}
+
+// Login con email + contraseña.
+export async function loginPassword(email: string, password: string) {
+  const data = await api<{ accessToken: string; refreshToken: string }>("/auth/login-password", {
+    method: "POST", body: { email, password }, auth: false,
+  });
+  await setTokens(data.accessToken, data.refreshToken);
+}
+
+export async function forgotPassword(email: string) {
+  return api<{ ok: boolean; devResetToken?: string }>("/auth/forgot-password", {
+    method: "POST", body: { email }, auth: false,
+  });
+}
+
 export async function logout() {
   const refreshToken = await getRefreshToken();
   if (refreshToken) {

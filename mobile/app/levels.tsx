@@ -2,22 +2,19 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { api } from "@/lib/api";
-import { useAuth } from "@/state/auth";
 import { colors, LEVELS } from "@/theme/tokens";
 import { Crystal } from "@/components/Crystal";
 
 export default function Levels() {
-  const { me } = useAuth();
   const [current, setCurrent] = useState(1);
   const [sel, setSel] = useState(1);
 
   useEffect(() => {
     (async () => {
-      if (!me?.username) return;
-      const pub = await api<{ level: { current_level: number } }>(`/profiles/${me.username}`, { auth: false }).catch(() => null);
-      if (pub?.level) { setCurrent(pub.level.current_level); setSel(pub.level.current_level); }
+      const lv = await api<{ current_level: number }>("/levels/me").catch(() => null);
+      if (lv) { setCurrent(lv.current_level); setSel(lv.current_level); }
     })();
-  }, [me]);
+  }, []);
 
   const lv = LEVELS[sel - 1];
 

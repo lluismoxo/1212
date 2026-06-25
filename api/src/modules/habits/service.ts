@@ -19,6 +19,15 @@ export async function createHabit(userId: string, name: string, icon?: string | 
   return rows[0];
 }
 
+export async function renameHabit(userId: string, habitId: string, name: string) {
+  const rows = await sql`
+    update public.habits set name = ${name}
+    where id = ${habitId} and profile_id = ${userId}
+    returning id, name, icon, schedule, archived, created_at`;
+  if (!rows.length) throw new NotFoundError("hábito no encontrado");
+  return rows[0];
+}
+
 export async function archiveHabit(userId: string, habitId: string) {
   const rows = await sql`
     update public.habits set archived = true
@@ -28,14 +37,15 @@ export async function archiveHabit(userId: string, habitId: string) {
 }
 
 // Marca/desmarca un hábito en una fecha (upsert idempotente).
-export async function setHabitLog(userId: string, habitId: string, date: string, done: boolean) {
-  // verifica propiedad del hábito
+// Marca/desmarca un hábito SOLO en el día de HOY (fecha del servidor).
+// No se permite registrar días pasados/futuros → evita inflar el % de cumplimiento.
+export async function setHabitLog(userId: string, habitId: string, done: boolean) {
   const own = await sql`select 1 from public.habits where id = ${habitId} and profile_id = ${userId}`;
   if (!own.length) throw new NotFoundError("hábito no encontrado");
 
   await sql`
     insert into public.habit_logs (habit_id, profile_id, log_date, done)
-    values (${habitId}, ${userId}, ${date}, ${done})
+    values (${habitId}, ${userId}, current_date, ${done})
     on conflict (habit_id, log_date) do update set done = excluded.done`;
 }
 
@@ -44,6 +54,13 @@ export async function weekLogs(userId: string, from: string, to: string) {
   return sql`
     select habit_id, log_date, done from public.habit_logs
     where profile_id = ${userId} and log_date between ${from} and ${to} and done = true`;
+}
+
+// Hábitos marcados HOY (fecha del servidor) — para que la UI muestre el estado.
+export async function todayLogs(userId: string) {
+  return sql`
+    select habit_id from public.habit_logs
+    where profile_id = ${userId} and log_date = current_date and done = true`;
 }
 
 // Racha actual: días consecutivos (hasta hoy) con al menos un hábito hecho.
