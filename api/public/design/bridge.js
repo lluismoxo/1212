@@ -97,6 +97,24 @@
   };
 
   // ----------------------------------------------------------------------------
+  // Retorno de Google OAuth: el callback vuelve a /design/index.html con los
+  // tokens en el fragmento (#access=...&refresh=...). Los guardamos y limpiamos
+  // la URL para no dejarlos a la vista. Marcamos que venimos de login Google
+  // para que el wiring entre directo a home.
+  var cameFromGoogle = false;
+  (function captureOAuthFragment() {
+    if (!location.hash || location.hash.length < 2) return;
+    var f = new URLSearchParams(location.hash.slice(1));
+    var access = f.get("access"), refresh = f.get("refresh");
+    if (access && refresh) {
+      setTokens(access, refresh);
+      cameFromGoogle = true;
+    }
+    // limpiar el fragmento de la barra de direcciones (sin recargar)
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+  })();
+
+  // ----------------------------------------------------------------------------
   // Capa 2: wiring del diseño
   // ----------------------------------------------------------------------------
 
@@ -347,14 +365,33 @@
       logic.enterApp = function () { _enterApp(); loadData(logic); };
     }
 
-    // 2) Botones Google/Apple -> login real. El diseño los liga a goProfile.
-    //    Interceptamos el click en captura: si no hay sesión, pedimos login y
-    //    saltamos a home; si ya hay, vamos directo.
+    // Si volvemos de Google con sesión ya guardada (fragmento capturado al cargar),
+    // o ya había sesión en storage, entramos directos a home con datos reales.
+    if (cameFromGoogle && window.API.isLoggedIn()) {
+      logic.setState({ screen: "home", stack: [] });
+      loadData(logic);
+    }
+
+    // 2) Botones de auth. Google -> OAuth real por navegador (Google bloquea el
+    //    login dentro de WebViews, así que abrimos /auth/google/start; el callback
+    //    vuelve al diseño con los tokens). Apple/otros -> mini-form de email por ahora.
     document.addEventListener("click", async function (ev) {
       var b = ev.target.closest && ev.target.closest("button");
       if (!b) return;
       var txt = (b.textContent || "").trim();
-      if (txt.indexOf("Continuar con Google") === 0 || txt.indexOf("Continuar con Apple") === 0) {
+      if (txt.indexOf("Continuar con Google") === 0) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (window.API.isLoggedIn()) {
+          logic.setState({ screen: "home", stack: [] });
+          loadData(logic);
+          return;
+        }
+        // navega a la pantalla de consentimiento de Google (mismo contexto del WebView).
+        window.location.href = window.API.base + "/auth/google/start";
+        return;
+      }
+      if (txt.indexOf("Continuar con Apple") === 0) {
         ev.preventDefault();
         ev.stopPropagation();
         if (!window.API.isLoggedIn()) {
