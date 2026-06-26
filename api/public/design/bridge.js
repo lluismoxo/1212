@@ -88,6 +88,7 @@
     comMessages: function (id) { return call("/communities/" + id + "/messages?limit=50"); },
     comMembers: function (id) { return call("/communities/" + id + "/members"); },
     sendComMessage: function (id, body) { return call("/communities/" + id + "/messages", { method: "POST", body: { kind: "text", body: body } }); },
+    createCommunity: function (data) { return call("/communities", { method: "POST", body: data }); },
   };
 
   // ----------------------------------------------------------------------------
@@ -457,6 +458,48 @@
         if (com && com.id != null) {
           window.API.sendComMessage(com.id, text).catch(function (e) { console.warn("[bridge] sendMsg:", e.message); });
         }
+      };
+    }
+
+    // createCom(): crea la comunidad real (POST /communities) y usa el id real.
+    // El diseño no genera slug; lo derivamos del nombre.
+    function slugify(s) {
+      return (s || "")
+        .normalize("NFD").replace(/[̀-ͯ]/g, "") // quita acentos
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+        .slice(0, 40) || "comunidad";
+    }
+    var _createCom = logic.createCom && logic.createCom.bind(logic);
+    if (_createCom) {
+      logic.createCom = function () {
+        var d = logic.state.newCom;
+        if (!d || !(d.name || "").trim()) { logic.setState({ sheet: null }); return; }
+        var payload = {
+          slug: slugify(d.name) + "-" + Date.now().toString(36).slice(-4), // único
+          name: d.name.trim(),
+          description: (d.desc || "").trim() || undefined,
+          goal: (d.goal || "").trim() || undefined,
+          colors: Array.isArray(d.c) ? d.c : undefined,
+          isPrivate: false,
+        };
+        // cerramos la hoja ya; navegamos al detalle cuando llegue el id real.
+        logic.setState({ sheet: null });
+        window.API.createCommunity(payload).then(function (com) {
+          var mapped = mapCommunity(com);
+          // creador entra como moderador; lo marcamos unido y abrimos su detalle.
+          mapped.joined = true;
+          logic.setState(function (st) {
+            return {
+              communities: [mapped].concat(st.communities),
+              newCom: null,
+              selCom: 0,
+              comTab: "foro",
+              stack: st.stack.concat([st.screen]),
+              screen: "comDetail",
+            };
+          });
+          loadComDetail(0);
+        }).catch(function (e) { console.warn("[bridge] createCom:", e.message); });
       };
     }
     // ------- BUSCAR PERFILES: resultados reales -------
