@@ -54,28 +54,35 @@ authRoutes.post(
 );
 
 // ── Google OAuth por navegador (flujo Authorization Code) ─────────
-// Pensado para apps WebView: Google bloquea el login dentro de WebViews,
-// así que el botón abre /auth/google/start, el usuario entra en Google, y el
-// callback vuelve al diseño con los tokens en el fragmento (#) de la URL.
+// Google bloquea el login dentro de WebViews (error disallowed_useragent), así
+// que la app abre Safari (expo-web-browser). El callback vuelve a la app por
+// deep link (app1212://auth#tokens), que Expo intercepta y cierra el navegador.
 const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
-// Volvemos al diseño (servido por la API) con los tokens en el fragmento (#),
-// que el navegador NO envía al servidor; el bridge los lee y guarda. Funciona
-// igual en navegador externo y dentro del WebView del simulador.
-const APP_RETURN = "/design/index.html";
+const APP_SCHEME_RETURN = "app1212://auth";    // deep link (app, Safari externo)
+const WEB_RETURN = "/design/index.html";        // fallback web (navegador embebido)
 
-// GET /auth/google/start — redirige a la pantalla de consentimiento de Google.
+// Decide a dónde volver según la cookie g_ret (app|web). Por defecto: app.
+function returnUrl(c: import("hono").Context, frag: string): string {
+  const cookie = c.req.header("cookie") ?? "";
+  const mode = /g_ret=([^;]+)/.exec(cookie)?.[1];
+  const base = mode === "web" ? WEB_RETURN : APP_SCHEME_RETURN;
+  return `${base}#${frag}`;
+}
+
+// GET /auth/google/start?return=app|web — redirige al consentimiento de Google.
 authRoutes.get("/google/start", (c) => {
   const env = getEnv();
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
     return c.json({ error: "google_not_configured" }, 503);
   }
-  // state anti-CSRF: lo guardamos en cookie y lo comprobamos en el callback.
+  // state anti-CSRF + modo de retorno (app|web) guardados en cookie. El
+  // redirect_uri debe coincidir EXACTO con el registrado en Google (sin query),
+  // así que el modo NO va en la URL.
   const state = crypto.randomUUID();
-  c.header(
-    "Set-Cookie",
-    `g_state=${state}; Max-Age=600; Path=/auth/google; HttpOnly; SameSite=Lax`,
-  );
+  const ret = c.req.query("return") === "web" ? "web" : "app";
+  c.header("Set-Cookie", `g_state=${state}; Max-Age=600; Path=/auth/google; HttpOnly; SameSite=Lax`);
+  c.header("Set-Cookie", `g_ret=${ret}; Max-Age=600; Path=/auth/google; HttpOnly; SameSite=Lax`, { append: true });
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
     redirect_uri: env.GOOGLE_REDIRECT_URI,
@@ -96,7 +103,7 @@ authRoutes.get("/google/callback", async (c) => {
   const savedState = /g_state=([^;]+)/.exec(cookie)?.[1];
 
   if (!code || !state || !savedState || state !== savedState) {
-    return c.redirect(`${APP_RETURN}#error=invalid_state`);
+    return c.redirect(returnUrl(c, "error=invalid_state"));
   }
   try {
     // 1) intercambiar el code por tokens (incluye id_token)
@@ -111,22 +118,22 @@ authRoutes.get("/google/callback", async (c) => {
         grant_type: "authorization_code",
       }),
     });
-    if (!res.ok) return c.redirect(`${APP_RETURN}#error=token_exchange`);
+    if (!res.ok) return c.redirect(returnUrl(c, "error=token_exchange"));
     const data = (await res.json()) as { id_token?: string };
-    if (!data.id_token) return c.redirect(`${APP_RETURN}#error=no_id_token`);
+    if (!data.id_token) return c.redirect(returnUrl(c, "error=no_id_token"));
 
     // 2) verificar el id_token y crear sesión propia
     const identity = await verifyIdToken("google", data.id_token);
     const tokens = await loginWithIdentity(identity, meta(c));
 
-    // 3) volver a la app por deep link con los tokens en el fragmento
+    // 3) volver a la app (deep link o web) con los tokens en el fragmento
     const frag = new URLSearchParams({
       access: tokens.accessToken,
       refresh: tokens.refreshToken,
     });
-    return c.redirect(`${APP_RETURN}#${frag.toString()}`);
+    return c.redirect(returnUrl(c, frag.toString()));
   } catch {
-    return c.redirect(`${APP_RETURN}#error=auth_failed`);
+    return c.redirect(returnUrl(c, "error=auth_failed"));
   }
 });
 
