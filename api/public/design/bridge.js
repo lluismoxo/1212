@@ -509,6 +509,7 @@
       return {
         nm: p.display_name || p.username,
         user: "@" + p.username,
+        username: p.username, // plano, para enriquecer el perfil al abrirlo
         lvl: p.current_level || 1,
         c: ["#9A8748", "#D0AE5A"],
         links: [],
@@ -533,6 +534,38 @@
         }).catch(function (e) { console.warn("[bridge] search:", e.message); });
       }, 300);
     }, true);
+
+    // ------- PERFIL PÚBLICO: al abrir un miembro, enriquecer con datos reales -------
+    // openMember(p) abre la hoja con selMember. Si tenemos el username (de la
+    // búsqueda), pedimos /profiles/:username y rellenamos city/nivel reales.
+    function findUsername(p) {
+      if (p && p.username) return p.username;
+      if (p && p.user) return String(p.user).replace(/^@/, "");
+      // buscar en USERS por nombre
+      var hit = (logic.USERS || []).filter(function (u) { return u.nm === (p && p.nm); })[0];
+      return hit && hit.username;
+    }
+    var _openMember = logic.openMember && logic.openMember.bind(logic);
+    if (_openMember) {
+      logic.openMember = function (p) {
+        _openMember(p); // abre la hoja ya (datos que haya)
+        var un = findUsername(p);
+        if (!un) return;
+        window.API.call("/profiles/" + encodeURIComponent(un), { auth: false }).then(function (prof) {
+          if (!prof) return;
+          logic.setState(function (st) {
+            if (!st.selMember) return {};
+            var m = Object.assign({}, st.selMember, {
+              nm: prof.display_name || st.selMember.nm,
+              user: "@" + prof.username,
+              city: prof.city || st.selMember.city,
+              lvl: (prof.level && prof.level.current_level) || st.selMember.lvl,
+            });
+            return { selMember: m };
+          });
+        }).catch(function (e) { console.warn("[bridge] perfil:", e.message); });
+      };
+    }
 
     // ------- navegación: cargar datos reales al entrar a cada pantalla -------
     // go() es el método de navegación del diseño (this.go('comunidad'|'buscar'|...)).
