@@ -89,6 +89,9 @@
     comMembers: function (id) { return call("/communities/" + id + "/members"); },
     sendComMessage: function (id, body) { return call("/communities/" + id + "/messages", { method: "POST", body: { kind: "text", body: body } }); },
     createCommunity: function (data) { return call("/communities", { method: "POST", body: data }); },
+    journalList: function () { return call("/journal?limit=30"); },
+    journalGet: function (date) { return call("/journal/" + date); },
+    journalSave: function (date, body) { return call("/journal/" + date, { method: "PUT", body: { body: body } }); },
   };
 
   // ----------------------------------------------------------------------------
@@ -567,6 +570,51 @@
       };
     }
 
+    // ------- DIARIO: entrada de hoy + historial reales -------
+    // El diseño tiene un <textarea> sin handler de guardado y lee this.JOURNALS
+    // (mock) para "Entradas anteriores". Interceptamos el textarea por placeholder
+    // (cero cambios en el markup): cargamos la entrada de hoy y guardamos con
+    // debounce vía PUT /journal/:fecha.
+    var MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    var DIAS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    function todayISO() {
+      var d = new Date();
+      return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    }
+    function fmtEntryDate(iso) {
+      // iso 'YYYY-MM-DD' (o con tiempo) -> "Lunes 22 jun"
+      var s = String(iso).slice(0, 10).split("-");
+      if (s.length < 3) return iso;
+      var dt = new Date(+s[0], +s[1] - 1, +s[2]);
+      return DIAS[dt.getDay()] + " " + (+s[2]) + " " + MESES[+s[1] - 1];
+    }
+    function loadJournal() {
+      // entrada de hoy -> rellenar el textarea
+      window.API.journalGet(todayISO()).then(function (e) {
+        var body = (e && e.body) || "";
+        var ta = document.querySelector('textarea[placeholder*="sobre tu día"]');
+        if (ta && document.activeElement !== ta) ta.value = body;
+      }).catch(function () {});
+      // historial -> alimentar this.JOURNALS para "Entradas anteriores"
+      window.API.journalList().then(function (list) {
+        logic.JOURNALS = (list || []).map(function (e) {
+          return { d: fmtEntryDate(e.entry_date), t: e.body || "" };
+        });
+        logic.forceUpdate && logic.forceUpdate();
+      }).catch(function (e) { console.warn("[bridge] journalList:", e.message); });
+    }
+    var journalTimer = null;
+    document.addEventListener("input", function (ev) {
+      var el = ev.target;
+      if (!el || el.tagName !== "TEXTAREA") return;
+      if ((el.getAttribute("placeholder") || "").indexOf("sobre tu día") < 0) return;
+      var body = el.value;
+      clearTimeout(journalTimer);
+      journalTimer = setTimeout(function () {
+        window.API.journalSave(todayISO(), body).catch(function (e) { console.warn("[bridge] journalSave:", e.message); });
+      }, 800);
+    }, true);
+
     // ------- navegación: cargar datos reales al entrar a cada pantalla -------
     // go() es el método de navegación del diseño (this.go('comunidad'|'buscar'|...)).
     // Lo envolvemos UNA vez para disparar cargas reales según destino.
@@ -575,7 +623,16 @@
       _go(screen);
       if (screen === "comunidad") loadCommunities();
       if (screen === "buscar") { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); }
+      if (screen === "diario") setTimeout(loadJournal, 60);
     };
+    // El diario también se alcanza por el tab inferior (tab('diario')), no solo go().
+    var _tab = logic.tab && logic.tab.bind(logic);
+    if (_tab) {
+      logic.tab = function (s) {
+        _tab(s);
+        if (s === "diario") setTimeout(loadJournal, 60);
+      };
+    }
 
     console.info("[bridge] cableado OK");
   }
