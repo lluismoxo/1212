@@ -4,6 +4,7 @@ import { verifyIdToken } from "../../lib/oidc.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { rateLimit } from "../../middleware/rateLimit.js";
 import type { AccessClaims } from "../../lib/jwt.js";
+import { getEnv } from "../../config/env.js";
 import {
   loginWithIdentity,
   refresh,
@@ -51,6 +52,83 @@ authRoutes.post(
     }
   },
 );
+
+// ── Google OAuth por navegador (flujo Authorization Code) ─────────
+// Pensado para apps WebView: Google bloquea el login dentro de WebViews,
+// así que el botón abre /auth/google/start, el usuario entra en Google, y el
+// callback vuelve al diseño con los tokens en el fragmento (#) de la URL.
+const GOOGLE_AUTH = "https://accounts.google.com/o/oauth2/v2/auth";
+const GOOGLE_TOKEN = "https://oauth2.googleapis.com/token";
+// Volvemos al diseño (servido por la API) con los tokens en el fragmento (#),
+// que el navegador NO envía al servidor; el bridge los lee y guarda. Funciona
+// igual en navegador externo y dentro del WebView del simulador.
+const APP_RETURN = "/design/index.html";
+
+// GET /auth/google/start — redirige a la pantalla de consentimiento de Google.
+authRoutes.get("/google/start", (c) => {
+  const env = getEnv();
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return c.json({ error: "google_not_configured" }, 503);
+  }
+  // state anti-CSRF: lo guardamos en cookie y lo comprobamos en el callback.
+  const state = crypto.randomUUID();
+  c.header(
+    "Set-Cookie",
+    `g_state=${state}; Max-Age=600; Path=/auth/google; HttpOnly; SameSite=Lax`,
+  );
+  const params = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: env.GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    state,
+    prompt: "select_account",
+  });
+  return c.redirect(`${GOOGLE_AUTH}?${params.toString()}`);
+});
+
+// GET /auth/google/callback — Google redirige aquí con ?code y ?state.
+authRoutes.get("/google/callback", async (c) => {
+  const env = getEnv();
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  const cookie = c.req.header("cookie") ?? "";
+  const savedState = /g_state=([^;]+)/.exec(cookie)?.[1];
+
+  if (!code || !state || !savedState || state !== savedState) {
+    return c.redirect(`${APP_RETURN}#error=invalid_state`);
+  }
+  try {
+    // 1) intercambiar el code por tokens (incluye id_token)
+    const res = await fetch(GOOGLE_TOKEN, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code,
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: env.GOOGLE_REDIRECT_URI,
+        grant_type: "authorization_code",
+      }),
+    });
+    if (!res.ok) return c.redirect(`${APP_RETURN}#error=token_exchange`);
+    const data = (await res.json()) as { id_token?: string };
+    if (!data.id_token) return c.redirect(`${APP_RETURN}#error=no_id_token`);
+
+    // 2) verificar el id_token y crear sesión propia
+    const identity = await verifyIdToken("google", data.id_token);
+    const tokens = await loginWithIdentity(identity, meta(c));
+
+    // 3) volver a la app por deep link con los tokens en el fragmento
+    const frag = new URLSearchParams({
+      access: tokens.accessToken,
+      refresh: tokens.refreshToken,
+    });
+    return c.redirect(`${APP_RETURN}#${frag.toString()}`);
+  } catch {
+    return c.redirect(`${APP_RETURN}#error=auth_failed`);
+  }
+});
 
 // ── Email + contraseña ────────────────────────────────────────
 const registerBody = z.object({
