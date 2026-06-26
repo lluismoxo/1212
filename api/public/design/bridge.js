@@ -421,6 +421,21 @@
         }
         enterHomeWithSession();
       }
+      // Cerrar sesión: el botón existe en la hoja de ajustes (sin handler propio).
+      if (txt === "Cerrar sesión") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        // revoca la sesión en el servidor (best-effort) y borra tokens locales.
+        var rt = null;
+        try { rt = localStorage.getItem("1212_refresh"); } catch (e) {}
+        if (rt) {
+          window.API.call("/auth/logout", { method: "POST", auth: false, body: { refreshToken: rt } }).catch(function () {});
+        }
+        window.API.clearTokens();
+        // limpia datos cargados y vuelve a la pantalla de auth del diseño.
+        logic.USERS = [];
+        logic.setState({ screen: "auth", stack: [], sheet: null, habits: [], tasks: [], communities: [] });
+      }
     }, true);
 
     // Si ya había sesión al cargar (token en storage), permitir entrar sin re-login
