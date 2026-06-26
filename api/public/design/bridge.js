@@ -85,9 +85,7 @@
     me: function () { return call("/profiles/me"); },
     communities: function () { return call("/communities"); },
     joinCommunity: function (id) { return call("/communities/" + id + "/join", { method: "POST" }); },
-    comMessages: function (id) { return call("/communities/" + id + "/messages?limit=50"); },
     comMembers: function (id) { return call("/communities/" + id + "/members"); },
-    sendComMessage: function (id, body) { return call("/communities/" + id + "/messages", { method: "POST", body: { kind: "text", body: body } }); },
     createCommunity: function (data) { return call("/communities", { method: "POST", body: data }); },
     journalList: function () { return call("/journal?limit=30"); },
     journalGet: function (date) { return call("/journal/" + date); },
@@ -471,72 +469,36 @@
 
     // ------- DETALLE DE COMUNIDAD: chat + miembros reales -------
     // El nombre del usuario actual (para marcar mensajes propios con me:true).
-    var myName = null;
-    window.API.me().then(function (p) { myName = p && (p.display_name || p.username); }).catch(function () {});
-
-    function fmtTime(iso) {
-      try { var d = new Date(iso); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); } catch (e) { return ""; }
-    }
-    function mapMsg(m) {
-      var who = m.display_name || m.username || "Usuario";
-      return {
-        who: who,
-        me: !!(myName && who === myName),
-        text: m.body || "",
-        kind: m.kind || "text",
-        time: fmtTime(m.created_at),
-      };
-    }
     function mapPart(p) {
       return { nm: p.display_name || p.username, lvl: p.current_level || 1, c: ["#9A8748", "#D0AE5A"] };
     }
 
-    // Carga chat + miembros de la comunidad en el índice `ci` y los inyecta en
-    // su entrada de state.communities (msgs/parts), sin tocar el resto.
+    // El diseño de la comunidad muestra info + participantes (NO tiene UI de chat
+    // visible, aunque su lógica sendMsg/msgs exista huérfana). Por eso solo
+    // cargamos los MIEMBROS reales al abrir el detalle.
     function loadComDetail(ci) {
       var com = logic.state.communities[ci];
       if (!com || com.id == null) return;
       var id = com.id;
-      // unirse es idempotente; necesario para poder leer chat/miembros.
+      // unirse es idempotente; necesario para poder leer la lista de miembros.
       window.API.joinCommunity(id).catch(function () {}).then(function () {
-        return Promise.all([
-          window.API.comMessages(id).catch(function () { return []; }),
-          window.API.comMembers(id).catch(function () { return []; }),
-        ]);
-      }).then(function (res) {
-        var msgs = (res[0] || []).slice().reverse().map(mapMsg); // backend DESC -> orden cronológico
-        var parts = (res[1] || []).map(mapPart);
+        return window.API.comMembers(id).catch(function () { return []; });
+      }).then(function (rows) {
+        var parts = (rows || []).map(mapPart);
         logic.setState(function (st) {
           return {
             communities: st.communities.map(function (c, i) {
-              return i === ci ? Object.assign({}, c, { msgs: msgs, parts: parts, joined: true }) : c;
+              return i === ci ? Object.assign({}, c, { parts: parts, joined: true }) : c;
             }),
           };
         });
       }).catch(function (e) { console.warn("[bridge] comDetail:", e.message); });
     }
 
-    // openCom(i): abre el detalle (lo hace el original) + carga datos reales.
+    // openCom(i): abre el detalle (lo hace el original) + carga miembros reales.
     var _openCom = logic.openCom && logic.openCom.bind(logic);
     if (_openCom) {
       logic.openCom = function (i) { _openCom(i); loadComDetail(i); };
-    }
-
-    // sendMsg(kind): solo texto va al backend (foto/archivo aún no soportados aquí).
-    var _sendMsg = logic.sendMsg && logic.sendMsg.bind(logic);
-    if (_sendMsg) {
-      logic.sendMsg = function (kind) {
-        var ci = logic.state.selCom;
-        if (ci == null) { _sendMsg(kind); return; }
-        if (kind !== "text") { _sendMsg(kind); return; } // foto/archivo: solo local por ahora
-        var text = (logic.state.chatDraft || "").trim();
-        _sendMsg(kind); // pinta el mensaje al instante (optimista) y limpia el draft
-        if (!text) return;
-        var com = logic.state.communities[ci];
-        if (com && com.id != null) {
-          window.API.sendComMessage(com.id, text).catch(function (e) { console.warn("[bridge] sendMsg:", e.message); });
-        }
-      };
     }
 
     // createCom(): crea la comunidad real (POST /communities) y usa el id real.
