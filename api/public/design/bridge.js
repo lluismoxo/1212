@@ -114,6 +114,19 @@
     try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
   })();
 
+  // ¿Estamos dentro del WebView de React Native? (la app inyecta este puente)
+  var inReactNative = typeof window.ReactNativeWebView !== "undefined";
+
+  // La app nativa nos entrega los tokens tras el login Google en Safari.
+  // Guardamos sesión y, si el logic ya está cableado, entramos a home.
+  var enterHomeWithSession = null; // lo define el wiring cuando monta
+  window.__1212_setSession = function (access, refresh) {
+    if (!access || !refresh) return;
+    setTokens(access, refresh);
+    cameFromGoogle = true;
+    if (enterHomeWithSession) enterHomeWithSession();
+  };
+
   // ----------------------------------------------------------------------------
   // Capa 2: wiring del diseño
   // ----------------------------------------------------------------------------
@@ -365,16 +378,24 @@
       logic.enterApp = function () { _enterApp(); loadData(logic); };
     }
 
-    // Si volvemos de Google con sesión ya guardada (fragmento capturado al cargar),
-    // o ya había sesión en storage, entramos directos a home con datos reales.
-    if (cameFromGoogle && window.API.isLoggedIn()) {
+    // Entra a home cargando datos reales. Lo exponemos para que el callback de
+    // Google (window.__1212_setSession) pueda usarlo aunque llegue tarde.
+    enterHomeWithSession = function () {
       logic.setState({ screen: "home", stack: [] });
       loadData(logic);
+    };
+
+    // Si volvemos de Google con sesión ya guardada, o ya había sesión en storage,
+    // entramos directos a home con datos reales.
+    if (cameFromGoogle && window.API.isLoggedIn()) {
+      enterHomeWithSession();
     }
 
-    // 2) Botones de auth. Google -> OAuth real por navegador (Google bloquea el
-    //    login dentro de WebViews, así que abrimos /auth/google/start; el callback
-    //    vuelve al diseño con los tokens). Apple/otros -> mini-form de email por ahora.
+    // 2) Botones de auth. Google bloquea el login dentro de WebViews, así que:
+    //    - en la app (React Native): pedimos abrir Safari (postMessage); la app
+    //      vuelve con los tokens vía window.__1212_setSession.
+    //    - en navegador web: navegamos a /auth/google/start?return=web.
+    //    Apple/otros -> mini-form de email por ahora.
     document.addEventListener("click", async function (ev) {
       var b = ev.target.closest && ev.target.closest("button");
       if (!b) return;
@@ -382,13 +403,13 @@
       if (txt.indexOf("Continuar con Google") === 0) {
         ev.preventDefault();
         ev.stopPropagation();
-        if (window.API.isLoggedIn()) {
-          logic.setState({ screen: "home", stack: [] });
-          loadData(logic);
-          return;
+        if (window.API.isLoggedIn()) { enterHomeWithSession(); return; }
+        if (inReactNative) {
+          // la app abrirá Safari (Google no permite WebView) y nos devolverá tokens.
+          window.ReactNativeWebView.postMessage(JSON.stringify({ type: "google-login" }));
+        } else {
+          window.location.href = window.API.base + "/auth/google/start?return=web";
         }
-        // navega a la pantalla de consentimiento de Google (mismo contexto del WebView).
-        window.location.href = window.API.base + "/auth/google/start";
         return;
       }
       if (txt.indexOf("Continuar con Apple") === 0) {
@@ -398,8 +419,7 @@
           var ok = await authModal();
           if (!ok) return;
         }
-        logic.setState({ screen: "home", stack: [] });
-        loadData(logic);
+        enterHomeWithSession();
       }
     }, true);
 
@@ -669,6 +689,7 @@
         lvl: p.current_level || 1,
         c: ["#9A8748", "#D0AE5A"],
         city: p.city || "",
+        links: [], // el diseño itera u.links.map en la búsqueda; nunca undefined
         lat: lat, lng: lng,
         me: !!isMe,
       };
