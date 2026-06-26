@@ -358,6 +358,74 @@
     // Si ya había sesión al cargar (token en storage), permitir entrar sin re-login
     // dejando que el flujo del diseño avance normal; los datos se cargan en enterApp.
 
+    // ------- COMUNIDADES: lista real -------
+    // El diseño lee state.communities con shape {id,n,m,a,c,desc,goal,parts,msgs}.
+    // Mapeamos las comunidades reales del backend a ese shape.
+    var DEFAULT_COLORS = ["#2C7D63", "#155040"];
+    function mapCommunity(c) {
+      var cols = Array.isArray(c.colors) && c.colors.length >= 2 ? c.colors : DEFAULT_COLORS;
+      return {
+        id: c.id,
+        slug: c.slug,
+        n: (c.name || "").toUpperCase(),
+        m: String(c.members != null ? c.members : 0),
+        a: c.joined ? "Te has unido" : "Pública",
+        c: cols,
+        desc: c.description || "Comunidad de 1212.",
+        goal: c.goal || "Define el objetivo del grupo.",
+        joined: !!c.joined,
+        parts: [],   // miembros: se cargan al abrir detalle
+        msgs: [],    // mensajes: idem
+      };
+    }
+    function loadCommunities() {
+      window.API.call("/communities").then(function (list) {
+        var coms = (list || []).map(mapCommunity);
+        logic.setState({ communities: coms });
+      }).catch(function (e) { console.warn("[bridge] communities:", e.message); });
+    }
+    // ------- BUSCAR PERFILES: resultados reales -------
+    // buildSearch() filtra this.USERS por searchQuery. Alimentamos this.USERS con
+    // resultados reales de /profiles/search (debounce) y forzamos re-render.
+    function mapUser(p) {
+      return {
+        nm: p.display_name || p.username,
+        user: "@" + p.username,
+        lvl: p.current_level || 1,
+        c: ["#9A8748", "#D0AE5A"],
+        links: [],
+        city: p.city || null,
+      };
+    }
+    var searchTimer = null;
+    // onSearchInput vive en el objeto de renderVals (se recrea cada render), así que
+    // no podemos envolverlo una vez. En su lugar interceptamos el input por evento.
+    document.addEventListener("input", function (ev) {
+      var el = ev.target;
+      if (!el || el.tagName !== "INPUT") return;
+      var ph = (el.getAttribute("placeholder") || "");
+      if (ph.indexOf("nombre de usuario") < 0) return; // solo el input de buscar
+      var term = (el.value || "").trim();
+      clearTimeout(searchTimer);
+      if (term.length < 2) { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); return; }
+      searchTimer = setTimeout(function () {
+        window.API.call("/profiles/search?q=" + encodeURIComponent(term)).then(function (rows) {
+          logic.USERS = (rows || []).map(mapUser);
+          logic.forceUpdate && logic.forceUpdate();
+        }).catch(function (e) { console.warn("[bridge] search:", e.message); });
+      }, 300);
+    }, true);
+
+    // ------- navegación: cargar datos reales al entrar a cada pantalla -------
+    // go() es el método de navegación del diseño (this.go('comunidad'|'buscar'|...)).
+    // Lo envolvemos UNA vez para disparar cargas reales según destino.
+    var _go = logic.go.bind(logic);
+    logic.go = function (screen) {
+      _go(screen);
+      if (screen === "comunidad") loadCommunities();
+      if (screen === "buscar") { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); }
+    };
+
     console.info("[bridge] cableado OK");
   }
 })();
