@@ -92,6 +92,8 @@
     journalList: function () { return call("/journal?limit=30"); },
     journalGet: function (date) { return call("/journal/" + date); },
     journalSave: function (date, body) { return call("/journal/" + date, { method: "PUT", body: { body: body } }); },
+    saveLocation: function (lat, lng) { return call("/location/me", { method: "PUT", body: { lat: lat, lng: lng } }); },
+    nearby: function (lat, lng, radiusKm) { return call("/location/nearby?lat=" + lat + "&lng=" + lng + "&radiusKm=" + (radiusKm || 20000) + "&limit=200"); },
   };
 
   // ----------------------------------------------------------------------------
@@ -615,6 +617,57 @@
       }, 800);
     }, true);
 
+    // ------- MAPA: globo con usuarios reales cercanos (PostGIS) -------
+    // initGlobe() del diseño pinta this.USERS (pointLat='lat', pointLng='lng').
+    // Al entrar a 'mapa': geolocalizamos el dispositivo, guardamos la posición
+    // (PUT /location/me), pedimos cercanos (GET /location/nearby) y alimentamos
+    // this.USERS [yo + cercanos]; luego reconstruimos el globo.
+    function mapNearby(p, myLat, myLng, isMe) {
+      var lat = p.lat != null ? p.lat : myLat;
+      var lng = p.lng != null ? p.lng : myLng;
+      return {
+        nm: p.display_name || p.username || "Tú",
+        user: p.username ? "@" + p.username : "",
+        username: p.username,
+        lvl: p.current_level || 1,
+        c: ["#9A8748", "#D0AE5A"],
+        city: p.city || "",
+        lat: lat, lng: lng,
+        me: !!isMe,
+      };
+    }
+    function reinitGlobe() {
+      // recrea el globo para que tome los USERS nuevos.
+      try { if (logic.destroyGlobe) logic.destroyGlobe(); } catch (e) {}
+      logic._globe = null;
+      if (logic.state.screen === "mapa" && logic.initGlobe) {
+        requestAnimationFrame(function () { requestAnimationFrame(function () { logic.initGlobe(); }); });
+      }
+    }
+    function loadMap() {
+      if (!navigator.geolocation) { console.warn("[bridge] sin geolocalización"); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var myLat = pos.coords.latitude, myLng = pos.coords.longitude;
+        window.API.saveLocation(myLat, myLng).catch(function () {});
+        window.API.me().then(function (me) {
+          var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: myLat, lng: myLng }, myLat, myLng, true);
+          return window.API.nearby(myLat, myLng).then(function (rows) {
+            var others = (rows || [])
+              .filter(function (r) { return r.username !== (me && me.username); })
+              .map(function (r) { return mapNearby(r, myLat, myLng, false); })
+              .filter(function (u) { return u.lat != null && u.lng != null; }); // solo los que comparten 'exact'
+            logic.USERS = [meUser].concat(others);
+            reinitGlobe();
+          });
+        }).catch(function (e) { console.warn("[bridge] map:", e.message); });
+      }, function (err) {
+        console.warn("[bridge] geo denegada:", err && err.message);
+        // sin permiso: dejamos USERS vacío (globo sin puntos) en vez de gente falsa.
+        logic.USERS = [];
+        reinitGlobe();
+      }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+    }
+
     // ------- navegación: cargar datos reales al entrar a cada pantalla -------
     // go() es el método de navegación del diseño (this.go('comunidad'|'buscar'|...)).
     // Lo envolvemos UNA vez para disparar cargas reales según destino.
@@ -624,6 +677,7 @@
       if (screen === "comunidad") loadCommunities();
       if (screen === "buscar") { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); }
       if (screen === "diario") setTimeout(loadJournal, 60);
+      if (screen === "mapa") { logic.USERS = []; setTimeout(loadMap, 80); }
     };
     // El diario también se alcanza por el tab inferior (tab('diario')), no solo go().
     var _tab = logic.tab && logic.tab.bind(logic);
