@@ -94,6 +94,7 @@
     journalSave: function (date, body) { return call("/journal/" + date, { method: "PUT", body: { body: body } }); },
     saveLocation: function (lat, lng) { return call("/location/me", { method: "PUT", body: { lat: lat, lng: lng } }); },
     nearby: function (lat, lng, radiusKm) { return call("/location/nearby?lat=" + lat + "&lng=" + lng + "&radiusKm=" + (radiusKm || 20000) + "&limit=200"); },
+    setSharing: function (mode) { return call("/profiles/me", { method: "PATCH", body: { locationSharing: mode } }); },
   };
 
   // ----------------------------------------------------------------------------
@@ -721,6 +722,9 @@
       if (!navigator.geolocation) { console.warn("[bridge] sin geolocalización"); return; }
       navigator.geolocation.getCurrentPosition(function (pos) {
         var myLat = pos.coords.latitude, myLng = pos.coords.longitude;
+        // Abrir el mapa = compartir ubicación exacta (para aparecer como punto y
+        // poder ver a los demás que también la comparten). Decisión del producto.
+        window.API.setSharing("exact").catch(function () {});
         window.API.saveLocation(myLat, myLng).catch(function () {});
         window.API.me().then(function (me) {
           var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: myLat, lng: myLng }, myLat, myLng, true);
