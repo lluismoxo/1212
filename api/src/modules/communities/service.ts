@@ -71,6 +71,24 @@ export async function createCommunity(
   return getCommunity(id, userId);
 }
 
+// Editar comunidad (solo moderador/creador). Campos opcionales.
+export async function updateCommunity(
+  communityId: string,
+  userId: string,
+  data: { name?: string; description?: string; goal?: string; colors?: unknown },
+) {
+  await assertModerator(communityId, userId);
+  const colors = data.colors !== undefined ? JSON.stringify(data.colors) : null;
+  await sql`
+    update public.communities set
+      name        = coalesce(${data.name ?? null}, name),
+      description  = coalesce(${data.description ?? null}, description),
+      goal         = coalesce(${data.goal ?? null}, goal),
+      colors       = coalesce(${colors}::jsonb, colors)
+    where id = ${communityId}`;
+  return getCommunity(communityId, userId);
+}
+
 // ── membresía ─────────────────────────────────────────────────
 export async function join(communityId: string, userId: string) {
   const c = await sql`select is_private from public.communities where id = ${communityId}`;
