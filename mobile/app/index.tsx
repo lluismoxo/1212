@@ -64,6 +64,7 @@ export default function App() {
         )}
         mixedContentMode="always"
         allowsInlineMediaPlayback
+        geolocationEnabled
         {...(Platform.OS === "ios" ? { allowsBackForwardNavigationGestures: true } : {})}
       />
     </View>

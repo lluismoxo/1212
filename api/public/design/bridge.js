@@ -672,6 +672,40 @@
         me: !!isMe,
       };
     }
+    // Override de initGlobe: tras construir el globo (markup), reconfiguramos
+    // los colores de los puntos a lo pedido — yo = azul luminoso, otros = blanco
+    // luminoso — sin tocar el markup del diseño.
+    var MY_BLUE = "#4FA3FF";   // mi punto
+    var OTHER_WHITE = "#ffffff"; // otros usuarios
+    if (!logic.__globeWrapped && logic.initGlobe) {
+      var _initGlobe = logic.initGlobe.bind(logic);
+      logic.initGlobe = function () {
+        _initGlobe();
+        var g = logic._globe;
+        if (!g) return;
+        try {
+          g.pointColor(function (d) { return d.me ? MY_BLUE : OTHER_WHITE; });
+          // aros (rings) alrededor de mi punto en azul para destacar
+          g.ringColor(function () { return function (t) { return "rgba(79,163,255," + (1 - t) + ")"; }; });
+        } catch (e) {}
+      };
+      logic.__globeWrapped = true;
+    }
+
+    // Override de flyToUser (click en un punto): si es OTRO usuario, abrimos su
+    // perfil (como en comunidades). Si soy yo, mantenemos el zoom original.
+    if (!logic.__flyWrapped && logic.flyToUser) {
+      var _flyToUser = logic.flyToUser.bind(logic);
+      logic.flyToUser = function (d) {
+        if (d && !d.me) {
+          if (logic.openMember) logic.openMember({ nm: d.nm, user: d.user, username: d.username, lvl: d.lvl, c: d.c, city: d.city, links: d.links || [] });
+          return;
+        }
+        _flyToUser(d);
+      };
+      logic.__flyWrapped = true;
+    }
+
     function reinitGlobe() {
       // recrea el globo para que tome los USERS nuevos.
       try { if (logic.destroyGlobe) logic.destroyGlobe(); } catch (e) {}
