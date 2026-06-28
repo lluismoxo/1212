@@ -65,6 +65,7 @@ export default function App() {
         mixedContentMode="always"
         allowsInlineMediaPlayback
         geolocationEnabled
+        hideKeyboardAccessoryView
         {...(Platform.OS === "ios" ? { allowsBackForwardNavigationGestures: true } : {})}
       />
     </View>

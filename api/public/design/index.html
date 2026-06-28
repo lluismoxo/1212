@@ -247,13 +247,6 @@
             <div style="width:40px"></div>
           </div>
 
-          <!-- segmented -->
-          <div style="display:flex;gap:4px;margin:14px 22px 0;padding:4px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07)">
-            <button onClick="{{ setCamino }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabCamino }};color:{{ tabCaminoC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Camino</button>
-            <button onClick="{{ setOrbita }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabOrbita }};color:{{ tabOrbitaC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Órbita</button>
-            <button onClick="{{ setAscenso }}" class="lg" style="flex:1;height:38px;border:none;border-radius:12px;background:{{ tabAscenso }};color:{{ tabAscensoC }};font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .25s">Ascenso</button>
-          </div>
-
           <!-- hero -->
           <div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 22px 6px;position:relative">
             <div style="position:relative;animation:floatY 7s ease-in-out infinite">
@@ -266,26 +259,10 @@
             <div style="font-size:14px;color:rgba(255,255,255,.5);max-width:260px;margin-top:8px;line-height:1.5">{{ selDesc }}</div>
           </div>
 
-          <!-- VARIATION: CAMINO -->
-          <sc-if value="{{ viewCamino }}" hint-placeholder-val="{{ true }}">
-            <div style="padding:18px 40px 0;position:relative">
-              {{ caminoPath }}
-            </div>
-          </sc-if>
-
-          <!-- VARIATION: ORBITA -->
-          <sc-if value="{{ viewOrbita }}" hint-placeholder-val="{{ false }}">
-            <div style="padding:24px 22px 0;display:flex;justify-content:center">
-              {{ orbitaView }}
-            </div>
-          </sc-if>
-
-          <!-- VARIATION: ASCENSO -->
-          <sc-if value="{{ viewAscenso }}" hint-placeholder-val="{{ false }}">
-            <div style="padding:18px 22px 0;display:flex;flex-direction:column-reverse;gap:8px">
-              {{ ascensoBars }}
-            </div>
-          </sc-if>
+          <!-- ÓRBITA (única vista) -->
+          <div style="padding:24px 22px 0;display:flex;justify-content:center">
+            {{ orbitaView }}
+          </div>
 
           <div style="padding:22px 22px 0">
             <button onClick="{{ playUnlock }}" class="lg" style="width:100%;height:54px;border:1px solid color-mix(in srgb,var(--lvl,#E6C77A) 38%,transparent);border-radius:18px;background:color-mix(in srgb,var(--lvl,#E6C77A) 12%,transparent);color:var(--lvl,#E6C77A);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--lvl,#E6C77A)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V8a5 5 0 0 1 10 0"/><rect x="4" y="11" width="16" height="10" rx="2"/></svg>Vista previa de desbloqueo</button>
@@ -347,6 +324,7 @@
             <div style="font-size:13px;letter-spacing:1px;color:var(--gold,#E6C77A);text-transform:uppercase;margin-bottom:14px">Hoy</div>
             <textarea placeholder="Escribe sobre tu día…" style="width:100%;min-height:170px;border:none;background:none;color:#fff;font-size:16px;line-height:1.7;font-family:inherit;resize:none;outline:none"></textarea>
           </div>
+          <button id="journalSave" style="width:100%;height:54px;margin-bottom:24px;border:none;border-radius:18px;background:var(--gold,#E6C77A);color:#070707;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer">Guardar entrada</button>
           <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:12px">Entradas anteriores</div>
           <div style="display:flex;flex-direction:column;gap:10px">{{ journalRows }}</div>
         </div>
@@ -394,7 +372,7 @@
             <span style="font-size:17px;font-weight:600;color:#fff">Mapa global</span>
           </div>
           <div style="position:absolute;right:22px;bottom:200px;z-index:5">{{ mapZoom }}</div>
-          <div style="position:absolute;left:22px;right:22px;bottom:108px;padding:14px 16px;border-radius:20px;background:rgba(10,12,18,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);z-index:5;animation:riseFade .35s ease">{{ mapCard }}</div>
+          <div style="position:absolute;left:22px;right:22px;bottom:34px;padding:14px 16px;border-radius:20px;background:rgba(10,12,18,.72);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);z-index:5;animation:riseFade .35s ease">{{ mapCard }}</div>
         </div>
       </sc-if>
 
@@ -466,7 +444,7 @@ class Component extends DCLogic {
     stack: [],
     onbStep: 0,
     selLevel: null,
-    view: 'camino',
+    view: 'orbita',
     unlocking: false,
     progress: 64,
     sheet: null,
@@ -484,7 +462,7 @@ class Component extends DCLogic {
       { id:2, text:'Llamar a mentor', done:false },
       { id:3, text:'Publicar contenido', done:false },
     ],
-    selCom: null, comTab: 'foro', chatDraft: '', selMember: null, newCom: null, mapSel: null,
+    selCom: null, comTab: 'foro', chatDraft: '', selMember: null, newCom: null, editingCom: null, mapSel: null,
     searchQuery: '',
     calY: 2026, calM: 5, calD: 22,
     communities: [
@@ -506,8 +484,8 @@ class Component extends DCLogic {
     { n:5, name:'Vidente',       desc:'Ves más allá. Brillo y claridad.',                   img:'crystalsT/level5.png', aura:'#2FE0D2', colors:{deep:'#0C2F3A',mid:'#134E5C',light:'#21788C',edge:'#2FE0D2',glow:'#2FE0D2'} },
     { n:6, name:'Arquitecto',    desc:'Construyes tu propio camino. Energía pura.',         img:'crystalsT/level6.png', aura:'#4F9BFF', colors:{deep:'#15334C',mid:'#28567B',light:'#4787BE',edge:'#4F9BFF',glow:'#4F9BFF'} },
     { n:7, name:'Soberano',      desc:'Dueño de tu evolución. Casi pulido.',                img:'crystalsT/level7.png', aura:'#9FB2D0', colors:{deep:'#34415A',mid:'#566A8C',light:'#869CC0',edge:'#B0C4E0',glow:'#9FB2D0'} },
-    { n:8, name:'Iluminado',     desc:'Resplandor sereno. La perfección se acerca.',        img:'crystalsT/level8.png', aura:'#6FE6FF', colors:{deep:'#6A6A80',mid:'#9696AE',light:'#C6C6D8',edge:'#E6E6F0',glow:'#6FE6FF'} },
-    { n:9, name:'Grado Supremo', desc:'La cima. Cristal puro de luz y oro.',                img:'crystalsT/level9.png', aura:'#E6C77A', colors:{deep:'#9A8748',mid:'#D0AE5A',light:'#F2DC90',edge:'#FFF6D6',glow:'#E6C77A'} },
+    { n:8, name:'Iluminado',     desc:'Resplandor sereno. La perfección se acerca.',        img:'crystalsT/level8.png', aura:'#E6C77A', colors:{deep:'#9A8748',mid:'#D0AE5A',light:'#F2DC90',edge:'#FFF6D6',glow:'#E6C77A'} },
+    { n:9, name:'Grado Supremo', desc:'La cima. Cristal puro de luz.',                      img:'crystalsT/level9.png', aura:'#FFFFFF', colors:{deep:'#8A8A8A',mid:'#BFBFBF',light:'#E8E8E8',edge:'#FFFFFF',glow:'#FFFFFF'} },
   ];
 
   componentDidMount() {
@@ -711,7 +689,7 @@ class Component extends DCLogic {
     ]) : React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'12px'}},[
       React.createElement('div',{key:'i',style:{width:'38px',height:'38px',flex:'none',borderRadius:'50%',background:'rgba(255,255,255,.06)',border:'1px solid rgba(255,255,255,.1)',display:'flex',alignItems:'center',justifyContent:'center'}}, React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:G,strokeWidth:1.7,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('circle',{key:1,cx:11,cy:11,r:7}),React.createElement('path',{key:2,d:'M21 21l-4-4'})])),
       React.createElement('div',{key:'t',style:{flex:1}},[
-        React.createElement('div',{key:'a',style:{fontSize:'14px',fontWeight:600,color:'#fff'}},'Explora la comunidad'),
+        React.createElement('div',{key:'a',style:{fontSize:'14px',fontWeight:600,color:'#fff'}},'Averigua dónde están los usuarios'),
         React.createElement('div',{key:'b',style:{fontSize:'12px',color:'rgba(255,255,255,.45)',marginTop:'2px'}},'Arrastra para rotar · pellizca para hacer zoom · toca un punto'),
       ]),
     ]);
@@ -1237,7 +1215,11 @@ class Component extends DCLogic {
         React.createElement('span',{key:'t',style:{fontSize:'17px',fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}, c.n),
       ]),
       c.owner
-        ? React.createElement('button',{key:'del',onClick:()=>this.setState({sheet:'delCom'}),style:{width:'40px',height:'40px',flex:'none',borderRadius:'50%',border:'1px solid rgba(255,80,80,.3)',background:'rgba(255,80,80,.12)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}, this.icon('trash','#FF6B6B'))
+        ? React.createElement('div',{key:'own',style:{display:'flex',gap:'8px',flex:'none'}},[
+            React.createElement('button',{key:'edit',onClick:()=>this.openEditCom(),style:{width:'40px',height:'40px',borderRadius:'50%',border:'1px solid rgba(230,199,122,.35)',background:'rgba(230,199,122,.12)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}},
+              React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'#E6C77A',strokeWidth:1.8,strokeLinecap:'round',strokeLinejoin:'round'},[React.createElement('path',{key:1,d:'M12 20h9'}),React.createElement('path',{key:2,d:'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z'})])),
+            React.createElement('button',{key:'del',onClick:()=>this.setState({sheet:'delCom'}),style:{width:'40px',height:'40px',borderRadius:'50%',border:'1px solid rgba(255,80,80,.3)',background:'rgba(255,80,80,.12)',backdropFilter:'blur(8px)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}, this.icon('trash','#FF6B6B')),
+          ])
         : React.createElement('div',{key:'sp',style:{width:'40px',flex:'none'}}),
     ]);
     // header image — sólo el creador puede configurarla/modificarla
@@ -1338,10 +1320,11 @@ class Component extends DCLogic {
   ]); }
   sheetNewCom(G){
     const d=this.state.newCom||{id:0,name:'',desc:'',goal:'',c:['#2C7D63','#155040']};
+    const editing=!!this.state.editingCom;
     const setF=(k,v)=>this.setState(st=>({newCom:{...(st.newCom||{name:'',desc:'',goal:'',c:['#2C7D63','#155040']}),[k]:v}}));
     return React.createElement('div',{className:'vp',style:{maxHeight:'74vh',overflowY:'auto'}},[
-      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'4px'}},'Crear comunidad'),
-      React.createElement('div',{key:'s',style:{fontSize:'13px',color:'rgba(255,255,255,.45)',marginBottom:'18px'}},'Un espacio privado para tu proyecto.'),
+      React.createElement('div',{key:'h',style:{fontSize:'19px',fontWeight:700,color:'#fff',marginBottom:'4px'}}, editing?'Editar comunidad':'Crear comunidad'),
+      React.createElement('div',{key:'s',style:{fontSize:'13px',color:'rgba(255,255,255,.45)',marginBottom:'18px'}}, editing?'Actualiza los datos de tu comunidad.':'Un espacio privado para tu proyecto.'),
       React.createElement('div',{key:'covl',style:{fontSize:'11px',letterSpacing:'.5px',textTransform:'uppercase',color:'rgba(255,255,255,.4)',marginBottom:'6px'}},'Imagen de cabecera'),
       React.createElement('div',{key:'cov',style:{position:'relative',height:'110px',borderRadius:'16px',overflow:'hidden',background:`linear-gradient(135deg, ${d.c[0]}, ${d.c[1]})`,marginBottom:'16px'}},[
         React.createElement('image-slot',{key:'img',id:'comCover'+d.id,shape:'rounded',radius:'16',placeholder:'Arrastra o toca para subir',style:{display:'block',width:'100%',height:'110px',background:'transparent'}}),
@@ -1355,11 +1338,21 @@ class Component extends DCLogic {
       this.comField('WhatsApp', d.lkWhats||'', (e)=>setF('lkWhats',e.target.value), 'Enlace de invitación'),
       this.comField('Instagram', d.lkInsta||'', (e)=>setF('lkInsta',e.target.value), '@usuario'),
       this.comField('Web / otro', d.lkWeb||'', (e)=>setF('lkWeb',e.target.value), 'https://…'),
-      React.createElement('button',{key:'b',onClick:()=>this.createCom(),style:{width:'100%',height:'54px',marginTop:'8px',border:'none',borderRadius:'18px',background:G,color:'#070707',fontSize:'16px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}},'Crear comunidad'),
+      React.createElement('button',{key:'b',onClick:()=> editing?this.saveEditCom():this.createCom(),style:{width:'100%',height:'54px',marginTop:'8px',border:'none',borderRadius:'18px',background:G,color:'#070707',fontSize:'16px',fontWeight:600,fontFamily:'inherit',cursor:'pointer'}}, editing?'Guardar cambios':'Crear comunidad'),
     ]);
+  }
+  openEditCom(){
+    const c=this.state.communities[this.state.selCom]; if(!c) return;
+    this.setState({ sheet:'newCom', editingCom:c.id, newCom:{ id:c.id, name:c.n||'', desc:c.desc||'', goal:c.goal||'', c:c.c||['#2C7D63','#155040'] } });
+  }
+  saveEditCom(){
+    // el puente real (bridge.js) intercepta esto y hace PATCH al backend.
+    const d=this.state.newCom; if(!d) { this.setState({sheet:null,editingCom:null}); return; }
+    const ci=this.state.selCom;
+    this.setState(st=>({ communities: st.communities.map((c,i)=> i===ci?{...c, n:(d.name||c.n).toUpperCase(), desc:d.desc, goal:d.goal, c:d.c||c.c}:c), sheet:null, editingCom:null, newCom:null }));
   }
 }
 </script>
-<script src="./bridge.js?v=6"></script>
+<script src="./bridge.js?v=7"></script>
 </body>
 </html>

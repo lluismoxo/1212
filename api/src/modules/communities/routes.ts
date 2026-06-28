@@ -29,6 +29,19 @@ communityRoutes.post("/", requireAuth, async (c) => {
   catch (e) { return handle(e, c); }
 });
 
+// PATCH /communities/:id — editar (solo creador/moderador)
+communityRoutes.patch("/:id", requireAuth, async (c) => {
+  const b = z.object({
+    name: z.string().min(2).max(80).optional(),
+    description: z.string().max(500).optional(),
+    goal: z.string().max(300).optional(),
+    colors: z.array(z.string()).max(4).optional(),
+  }).safeParse(await c.req.json().catch(() => null));
+  if (!b.success) return c.json({ error: "bad_request" }, 400);
+  try { return c.json(await svc.updateCommunity(c.req.param("id")!, uid(c), b.data)); }
+  catch (e) { return handle(e, c); }
+});
+
 communityRoutes.get("/:id", requireAuth, async (c) => {
   try { return c.json(await svc.getCommunity(c.req.param("id")!, uid(c))); }
   catch (e) { return handle(e, c); }

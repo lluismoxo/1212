@@ -87,6 +87,7 @@
     joinCommunity: function (id) { return call("/communities/" + id + "/join", { method: "POST" }); },
     comMembers: function (id) { return call("/communities/" + id + "/members"); },
     createCommunity: function (data) { return call("/communities", { method: "POST", body: data }); },
+    updateCommunity: function (id, data) { return call("/communities/" + id, { method: "PATCH", body: data }); },
     journalList: function () { return call("/journal?limit=30"); },
     journalGet: function (date) { return call("/journal/" + date); },
     journalSave: function (date, body) { return call("/journal/" + date, { method: "PUT", body: { body: body } }); },
@@ -542,6 +543,25 @@
         }).catch(function (e) { console.warn("[bridge] createCom:", e.message); });
       };
     }
+
+    // saveEditCom(): edita la comunidad en el backend (PATCH). El diseño ya
+    // actualiza el state local; aquí persistimos.
+    var _saveEditCom = logic.saveEditCom && logic.saveEditCom.bind(logic);
+    if (_saveEditCom) {
+      logic.saveEditCom = function () {
+        var d = logic.state.newCom;
+        var id = logic.state.editingCom;
+        _saveEditCom(); // actualiza UI local + cierra hoja
+        if (!d || id == null) return;
+        window.API.updateCommunity(id, {
+          name: (d.name || "").trim() || undefined,
+          description: (d.desc || "").trim() || undefined,
+          goal: (d.goal || "").trim() || undefined,
+          colors: Array.isArray(d.c) ? d.c : undefined,
+        }).catch(function (e) { console.warn("[bridge] saveEditCom:", e.message); });
+      };
+    }
+
     // ------- BUSCAR PERFILES: resultados reales -------
     // buildSearch() filtra this.USERS por searchQuery. Alimentamos this.USERS con
     // resultados reales de /profiles/search (debounce) y forzamos re-render.
@@ -557,16 +577,20 @@
       };
     }
     var searchTimer = null;
-    // onSearchInput vive en el objeto de renderVals (se recrea cada render), así que
-    // no podemos envolverlo una vez. En su lugar interceptamos el input por evento.
+    // El input de buscar es value-controlado por searchQuery (state). Interceptamos
+    // el input, sincronizamos searchQuery en el state (para que el texto NO se borre)
+    // y, con debounce, alimentamos this.USERS con /profiles/search.
     document.addEventListener("input", function (ev) {
       var el = ev.target;
       if (!el || el.tagName !== "INPUT") return;
       var ph = (el.getAttribute("placeholder") || "");
       if (ph.indexOf("nombre de usuario") < 0) return; // solo el input de buscar
-      var term = (el.value || "").trim();
+      var raw = el.value || "";
+      var term = raw.trim();
+      // mantener el texto en el state (si no, el value-controlado lo resetea)
+      logic.setState({ searchQuery: raw });
       clearTimeout(searchTimer);
-      if (term.length < 2) { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); return; }
+      if (term.length < 2) { logic.USERS = []; return; }
       searchTimer = setTimeout(function () {
         window.API.call("/profiles/search?q=" + encodeURIComponent(term)).then(function (rows) {
           logic.USERS = (rows || []).map(mapUser);
@@ -650,6 +674,28 @@
       journalTimer = setTimeout(function () {
         window.API.journalSave(todayISO(), body).catch(function (e) { console.warn("[bridge] journalSave:", e.message); });
       }, 800);
+    }, true);
+
+    // Botón "Guardar entrada" del diario: guarda ya, cierra el teclado y refresca
+    // el historial. Se identifica por id (#journalSave, añadido al markup).
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest && ev.target.closest("#journalSave");
+      if (!b) return;
+      ev.preventDefault();
+      var ta = document.querySelector('textarea[placeholder*="sobre tu día"]');
+      var body = ta ? ta.value : "";
+      if (ta) ta.blur(); // cierra el teclado
+      clearTimeout(journalTimer);
+      var orig = b.textContent;
+      b.textContent = "Guardando…";
+      window.API.journalSave(todayISO(), body).then(function () {
+        b.textContent = "Guardado ✓";
+        loadJournal();
+        setTimeout(function () { b.textContent = orig; }, 1500);
+      }).catch(function (e) {
+        console.warn("[bridge] journalSave:", e.message);
+        b.textContent = orig;
+      });
     }, true);
 
     // ------- MAPA: globo con usuarios reales cercanos (PostGIS) -------
