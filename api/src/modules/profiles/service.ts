@@ -110,3 +110,37 @@ export async function setSocialLinks(
 export async function completeOnboarding(userId: string) {
   await sql`update public.profiles set onboarding_done = true where id = ${userId}`;
 }
+
+// Estadísticas reales del usuario para la pantalla de Perfil.
+export async function userStats(userId: string) {
+  const [habits, journal, active, streak] = await Promise.all([
+    // hábitos activos (no archivados)
+    sql<{ n: number }[]>`select count(*)::int as n from public.habits where profile_id = ${userId} and archived = false`,
+    // entradas de diario
+    sql<{ n: number }[]>`select count(*)::int as n from public.journal_entries where profile_id = ${userId}`,
+    // días activos: días distintos con al menos un hábito hecho o una entrada de diario
+    sql<{ n: number }[]>`
+      select count(distinct d)::int as n from (
+        select log_date as d from public.habit_logs where profile_id = ${userId} and done = true
+        union
+        select entry_date as d from public.journal_entries where profile_id = ${userId}
+      ) t`,
+    // racha actual: días consecutivos hasta hoy con algún hábito hecho
+    sql<{ n: number }[]>`
+      with dias as (
+        select distinct log_date as d from public.habit_logs
+        where profile_id = ${userId} and done = true and log_date <= current_date
+      ), num as (
+        select d, (current_date - d) - row_number() over (order by d desc) + 1 as grp from dias
+      )
+      select count(*)::int as n from num
+      where grp = (select (current_date - max(d)) from dias)
+        and (select max(d) from dias) >= current_date - 1`,
+  ]);
+  return {
+    habitos: habits[0]?.n ?? 0,
+    diario: journal[0]?.n ?? 0,
+    diasActivos: active[0]?.n ?? 0,
+    racha: streak[0]?.n ?? 0,
+  };
+}

@@ -1,7 +1,8 @@
 import { useRef, useCallback } from "react";
-import { View, ActivityIndicator, StyleSheet, Platform } from "react-native";
+import { View, ActivityIndicator, StyleSheet, Platform, Linking } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
+import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 
 // La app muestra el diseño literal (Claude Design) servido por la API en /design.
@@ -42,11 +43,34 @@ export default function App() {
     }
   }, [API, injectTokens]);
 
+  // Pide permiso de notificaciones (cuando el usuario las activa en Ajustes).
+  const enableNotifications = useCallback(async () => {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      let granted = status === "granted";
+      if (!granted) {
+        const req = await Notifications.requestPermissionsAsync();
+        granted = req.status === "granted";
+      }
+      // refleja el resultado real en el WebView (si no se concede, el toggle vuelve a off)
+      ref.current?.injectJavaScript(
+        `window.__1212_notifResult && window.__1212_notifResult(${granted ? "true" : "false"}); true;`,
+      );
+    } catch { /* noop */ }
+  }, []);
+
   const onMessage = useCallback((e: WebViewMessageEvent) => {
-    let msg: { type?: string } = {};
+    let msg: { type?: string; on?: boolean; which?: string } = {};
     try { msg = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (msg.type === "google-login") startGoogle();
-  }, [startGoogle]);
+    else if (msg.type === "notif") {
+      if (msg.on) enableNotifications();
+      // desactivar: el sistema no permite revocar por código; se gestiona en Ajustes.
+    } else if (msg.type === "perm") {
+      // abrir los Ajustes del sistema de la app para gestionar el permiso.
+      Linking.openSettings().catch(() => {});
+    }
+  }, [startGoogle, enableNotifications]);
 
   return (
     <View style={styles.c}>
