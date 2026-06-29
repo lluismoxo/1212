@@ -1186,7 +1186,12 @@ class Component extends DCLogic {
     }));
   }
   buildMap(G){
-    return React.createElement('div',{key:'globeHost',id:'globeHost',style:{position:'absolute',inset:0,background:'radial-gradient(120% 90% at 50% 30%, #0a0f1a, #03050a 70%)'}});
+    return React.createElement('div',{key:'mapwrap',style:{position:'absolute',inset:0,overflow:'hidden'}},[
+      React.createElement('div',{key:'globeHost',id:'globeHost',style:{position:'absolute',inset:0,background:'radial-gradient(120% 90% at 50% 30%, #0a0f1a, #03050a 70%)'}}),
+      // Aro de luz suave alrededor del mapa (overlay CSS, independiente del WebGL):
+      // halo blanco-azulado en el borde, manteniendo el centro oscuro y nítido.
+      React.createElement('div',{key:'halo',style:{position:'absolute',inset:0,pointerEvents:'none',zIndex:4,borderRadius:'inherit',boxShadow:'inset 0 0 90px 10px rgba(150,185,255,0.22), inset 0 0 30px 2px rgba(255,255,255,0.10)'}}),
+    ]);
   }
   initGlobe(){ /* El mapa lo construye bridge.js con MapLibre (sobrescribe este método). */ }
   destroyGlobe(){ /* lo gestiona bridge.js (teardownMap). */ }
