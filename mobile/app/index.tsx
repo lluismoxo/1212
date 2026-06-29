@@ -78,7 +78,16 @@ export default function App() {
         ref={ref}
         source={{ uri: DESIGN_URL }}
         style={styles.web}
-        originWhitelist={["*"]}
+        // Solo permitimos cargar nuestra API y el deep link de la app; ningún
+        // otro origen se renderiza dentro del WebView (anti-MITM/phishing).
+        originWhitelist={[API, "app1212://*"]}
+        // Los enlaces externos (perfiles sociales) se abren en el navegador del
+        // sistema, no dentro del WebView.
+        onShouldStartLoadWithRequest={(req) => {
+          if (req.url.startsWith(API) || req.url.startsWith("app1212://")) return true;
+          if (/^https?:\/\//.test(req.url)) { Linking.openURL(req.url).catch(() => {}); return false; }
+          return true;
+        }}
         javaScriptEnabled
         domStorageEnabled
         startInLoadingState
@@ -86,7 +95,9 @@ export default function App() {
         renderLoading={() => (
           <View style={styles.loading}><ActivityIndicator color="#E6C77A" /></View>
         )}
-        mixedContentMode="always"
+        // En desarrollo la API es http://localhost; en producción debe ser https,
+        // por lo que el contenido mixto se deshabilita salvo en dev.
+        mixedContentMode={API.startsWith("https") ? "never" : "always"}
         allowsInlineMediaPlayback
         geolocationEnabled
         hideKeyboardAccessoryView

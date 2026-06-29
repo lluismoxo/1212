@@ -51,6 +51,9 @@ export async function searchProfiles(query: string, limit: number) {
 }
 
 // Perfil público por username (solo si is_public y no borrado).
+// Los datos de contacto directo (teléfono/WhatsApp) NO se exponen públicamente:
+// son PII de contacto y verlos no requiere que el visitante esté autenticado.
+const PUBLIC_LINK_KINDS = ["instagram", "x", "youtube", "linkedin", "web", "tiktok"];
 export async function getPublicProfile(username: string) {
   const rows = await sql`
     select id, username, display_name, avatar_url, bio, city, location_sharing
@@ -60,7 +63,8 @@ export async function getPublicProfile(username: string) {
   const profile = rows[0];
   const links = await sql`
     select kind, url, position from public.social_links
-    where profile_id = ${profile.id} order by position`;
+    where profile_id = ${profile.id} and kind = any(${PUBLIC_LINK_KINDS})
+    order by position`;
   const level = await sql`
     select ul.current_level, ul.progress, l.name
     from public.user_levels ul join public.levels l on l.n = ul.current_level
