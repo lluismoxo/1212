@@ -1186,7 +1186,13 @@ class Component extends DCLogic {
     }));
   }
   buildMap(G){
-    return React.createElement('div',{key:'globeHost',id:'globeHost',style:{position:'absolute',inset:0,background:'radial-gradient(120% 90% at 50% 30%, #0a0f1a, #03050a 70%)'}});
+    return React.createElement('div',{key:'mapwrap',style:{position:'absolute',inset:0,overflow:'hidden'}},[
+      React.createElement('div',{key:'globeHost',id:'globeHost',style:{position:'absolute',inset:0,background:'radial-gradient(120% 90% at 50% 30%, #0a0f1a, #03050a 70%)'}}),
+      // Aro de luz FINO en el borde del mapa (overlay CSS, no depende del WebGL).
+      // radial-gradient transparente en casi todo el área y un anillo luminoso solo
+      // en el contorno -> halo sutil, el centro queda oscuro y nítido.
+      React.createElement('div',{key:'halo',style:{position:'absolute',inset:0,pointerEvents:'none',zIndex:4,background:'radial-gradient(circle at 50% 50%, transparent 70%, rgba(150,185,255,0.10) 88%, rgba(190,215,255,0.30) 97%, rgba(120,150,210,0.12) 100%)'}}),
+    ]);
   }
   initGlobe(){ /* El mapa lo construye bridge.js con MapLibre (sobrescribe este método). */ }
   destroyGlobe(){ /* lo gestiona bridge.js (teardownMap). */ }
@@ -1443,6 +1449,6 @@ class Component extends DCLogic {
   }
 }
 </script>
-<script src="./bridge.js?v=20"></script>
+<script src="./bridge.js?v=22"></script>
 </body>
 </html>
