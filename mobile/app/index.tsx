@@ -1,8 +1,9 @@
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet, Platform, Linking } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
 import * as Notifications from "expo-notifications";
+import * as Location from "expo-location";
 import Constants from "expo-constants";
 
 // La app muestra el diseño literal (Claude Design) servido por la API en /design.
@@ -17,6 +18,13 @@ const RETURN_SCHEME = "app1212://auth";
 
 export default function App() {
   const ref = useRef<WebView>(null);
+
+  // El WebView de iOS solo entrega geolocalización si la app pidió antes el
+  // permiso nativo de ubicación. Lo solicitamos al arrancar (con permiso, el
+  // navigator.geolocation del WebView funciona y el mapa muestra el punto azul).
+  useEffect(() => {
+    Location.requestForegroundPermissionsAsync().catch(() => {});
+  }, []);
 
   // Inyecta los tokens (del deep link) en el WebView para que el bridge cree sesión.
   const injectTokens = useCallback((access: string, refresh: string) => {
