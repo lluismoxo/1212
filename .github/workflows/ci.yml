@@ -62,3 +62,21 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit
+
+  # ── Seguridad: secret scanning (gitleaks) + SCA (npm audit) ──
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scanning (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: SCA api (audit alto)
+        working-directory: api
+        run: npm audit --omit=dev --audit-level=high
+      - name: SCA mobile (audit alto, no bloqueante)
+        working-directory: mobile
+        run: npm audit --omit=dev --audit-level=high || true
