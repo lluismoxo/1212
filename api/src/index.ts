@@ -27,6 +27,8 @@ const app = new Hono();
 app.use("/design/*", serveStatic({ root: "./public" }));
 // Web-app propia (diseño del prototipo + datos reales del backend).
 app.use("/app/*", serveStatic({ root: "./public" }));
+// Documentos legales (markdown) servidos para mostrarlos en Ajustes.
+app.use("/legal/*", serveStatic({ root: "./public" }));
 
 // Cabeceras de seguridad (CSP, X-Frame, nosniff, HSTS en prod, etc.)
 app.use("*", secureHeaders());

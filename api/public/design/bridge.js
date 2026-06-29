@@ -421,22 +421,78 @@
         }
         enterHomeWithSession();
       }
-      // Cerrar sesión: el botón existe en la hoja de ajustes (sin handler propio).
-      if (txt === "Cerrar sesión") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        // revoca la sesión en el servidor (best-effort) y borra tokens locales.
-        var rt = null;
-        try { rt = localStorage.getItem("1212_refresh"); } catch (e) {}
-        if (rt) {
-          window.API.call("/auth/logout", { method: "POST", auth: false, body: { refreshToken: rt } }).catch(function () {});
-        }
-        window.API.clearTokens();
-        // limpia datos cargados y vuelve a la pantalla de auth del diseño.
-        logic.USERS = [];
-        logic.setState({ screen: "auth", stack: [], sheet: null, habits: [], tasks: [], communities: [] });
-      }
     }, true);
+
+    // ------- AJUSTES: funciones expuestas a los botones del diseño -------
+    // Cerrar sesión.
+    window.__1212_logout = function () {
+      var rt = null;
+      try { rt = localStorage.getItem("1212_refresh"); } catch (e) {}
+      if (rt) window.API.call("/auth/logout", { method: "POST", auth: false, body: { refreshToken: rt } }).catch(function () {});
+      window.API.clearTokens();
+      logic.USERS = [];
+      logic.setState({ screen: "auth", stack: [], sheet: null, habits: [], tasks: [], communities: [] });
+    };
+
+    // Cargar los datos de la cuenta al abrir Ajustes > Cuenta.
+    function loadAccount() {
+      window.API.me().then(function (p) {
+        logic.setState({ acct: {
+          display_name: p.display_name || "", username: p.username || "",
+          bio: p.bio || "", city: p.city || "", avatar_url: p.avatar_url || "",
+          location_sharing: p.location_sharing || "city",
+        } });
+      }).catch(function (e) { console.warn("[bridge] account:", e.message); });
+    }
+
+    // Guardar los cambios de la cuenta (PATCH /profiles/me con los campos reales).
+    window.__1212_saveAccount = function (a) {
+      var body = {};
+      if (a.display_name != null) body.displayName = a.display_name;
+      if (a.username != null && a.username.trim()) body.username = a.username.trim().replace(/^@/, "");
+      body.bio = a.bio || null;
+      body.city = a.city || null;
+      body.avatarUrl = (a.avatar_url || "").trim() || null;
+      window.API.call("/profiles/me", { method: "PATCH", body: body }).then(function () {
+        // refrescar nombre en el resto de la app + volver al menú de ajustes
+        applyLevelName(logic, realData.level, a.display_name || realData.name);
+        logic.setState({ sheet: "settings" });
+      }).catch(function (e) { console.warn("[bridge] saveAccount:", e.code || e.message); });
+    };
+
+    // Cambiar la visibilidad de la ubicación (location_sharing).
+    window.__1212_setSharing = function (mode) {
+      window.API.setSharing(mode).catch(function () {});
+      logic.setState(function (st) { return { acct: Object.assign({}, st.acct || {}, { location_sharing: mode }) }; });
+    };
+
+    // Notificaciones y permisos: necesitan la app nativa. Si estamos en el WebView
+    // de React Native, le pedimos por postMessage; si no (web), avisamos.
+    window.__1212_toggleNotif = function (on) {
+      logic.setState({ notifOn: on });
+      if (inReactNative) window.ReactNativeWebView.postMessage(JSON.stringify({ type: "notif", on: on }));
+      else if (on && "Notification" in window && Notification.requestPermission) {
+        Notification.requestPermission().then(function (r) { if (r !== "granted") logic.setState({ notifOn: false }); });
+      }
+    };
+    // La app nativa nos dice si concedió el permiso de notificaciones.
+    window.__1212_notifResult = function (granted) { logic.setState({ notifOn: !!granted }); };
+    window.__1212_openPerm = function (which) {
+      if (inReactNative) window.ReactNativeWebView.postMessage(JSON.stringify({ type: "perm", which: which }));
+    };
+
+    // Mostrar un documento legal (markdown servido en /legal).
+    window.__1212_openDoc = function (slug, title) {
+      var box = document.getElementById("legalDocView");
+      if (box) box.textContent = "Cargando…";
+      fetch(window.API.base + "/legal/" + slug + ".md").then(function (r) { return r.text(); }).then(function (md) {
+        var el = document.getElementById("legalDocView");
+        if (el) el.textContent = md;
+      }).catch(function () {
+        var el = document.getElementById("legalDocView");
+        if (el) el.textContent = "No se pudo cargar el documento.";
+      });
+    };
 
     // Si ya había sesión al cargar (token en storage), permitir entrar sin re-login
     // dejando que el flujo del diseño avance normal; los datos se cargan en enterApp.
@@ -790,6 +846,13 @@
     // ------- navegación: cargar datos reales al entrar a cada pantalla -------
     // go() es el método de navegación del diseño (this.go('comunidad'|'buscar'|...)).
     // Lo envolvemos UNA vez para disparar cargas reales según destino.
+    // Carga las estadísticas reales del perfil (GET /profiles/me/stats).
+    function loadStats() {
+      window.API.call("/profiles/me/stats").then(function (s) {
+        logic.setState({ stats: { diasActivos: s.diasActivos, habitos: s.habitos, racha: s.racha, diario: s.diario } });
+      }).catch(function (e) { console.warn("[bridge] stats:", e.message); });
+    }
+
     var _go = logic.go.bind(logic);
     logic.go = function (screen) {
       _go(screen);
@@ -797,6 +860,7 @@
       if (screen === "buscar") { logic.USERS = []; logic.forceUpdate && logic.forceUpdate(); }
       if (screen === "diario") setTimeout(loadJournal, 60);
       if (screen === "mapa") { logic.USERS = []; setTimeout(loadMap, 80); }
+      if (screen === "perfil") { setTimeout(loadStats, 60); setTimeout(loadAccount, 60); }
     };
     // El diario también se alcanza por el tab inferior (tab('diario')), no solo go().
     var _tab = logic.tab && logic.tab.bind(logic);

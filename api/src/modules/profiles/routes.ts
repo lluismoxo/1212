@@ -8,6 +8,7 @@ import {
   updateProfile,
   setSocialLinks,
   completeOnboarding,
+  userStats,
   NotFoundError,
   ValidationError,
 } from "./service.js";
@@ -32,6 +33,15 @@ profileRoutes.get("/search", requireAuth, async (c) => {
 profileRoutes.get("/me", requireAuth, async (c) => {
   try {
     return c.json(await getOwnProfile(c.get("user").sub));
+  } catch (e) {
+    return handle(e, c);
+  }
+});
+
+// GET /profiles/me/stats — estadísticas reales (días activos, hábitos, racha, diario)
+profileRoutes.get("/me/stats", requireAuth, async (c) => {
+  try {
+    return c.json(await userStats(c.get("user").sub));
   } catch (e) {
     return handle(e, c);
   }
