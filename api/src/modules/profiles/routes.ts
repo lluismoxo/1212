@@ -72,11 +72,12 @@ const linksBody = z.object({
   links: z
     .array(
       z.object({
-        kind: z.enum(["instagram", "x", "youtube", "linkedin", "web", "tiktok"]),
-        url: z.string().url(),
+        kind: z.enum(["instagram", "x", "youtube", "linkedin", "web", "tiktok", "phone", "whatsapp"]),
+        // phone/whatsapp guardan número o enlace; el resto, texto libre (usuario o URL).
+        url: z.string().min(1).max(300),
       }),
     )
-    .max(6),
+    .max(8),
 });
 
 // PUT /profiles/me/links — reemplazar enlaces sociales

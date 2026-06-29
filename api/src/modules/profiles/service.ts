@@ -16,13 +16,21 @@ export interface ProfileUpdate {
 const USERNAME_RE = /^[a-z0-9_.]{3,20}$/;
 
 // Perfil propio completo (incluye campos privados de config).
+interface OwnProfileRow {
+  id: string; username: string; display_name: string | null;
+  avatar_url: string | null; bio: string | null; city: string | null;
+  is_public: boolean; location_sharing: string; onboarding_done: boolean;
+}
 export async function getOwnProfile(userId: string) {
-  const rows = await sql`
+  const rows = await sql<OwnProfileRow[]>`
     select id, username, display_name, avatar_url, bio, city,
            is_public, location_sharing, onboarding_done
     from public.profiles where id = ${userId} and deleted_at is null`;
   if (!rows.length) throw new NotFoundError("perfil no encontrado");
-  return rows[0];
+  const links = await sql<{ kind: string; url: string; position: number }[]>`
+    select kind, url, position from public.social_links
+    where profile_id = ${userId} order by position`;
+  return { ...rows[0], links };
 }
 
 // Búsqueda parcial de perfiles públicos por username o nombre.
