@@ -888,6 +888,19 @@
         .catch(function (e) { console.warn("[bridge] refreshUsers:", e.message); });
     }
 
+    // La app nativa (expo-location) nos inyecta la ubicación: más fiable que el
+    // navigator.geolocation del WebView (que falla en el simulador iOS). Con esto
+    // el punto azul aparece y guardamos/centramos en la posición real.
+    window.__1212_setLocation = function (lat, lng) {
+      if (typeof lat !== "number" || typeof lng !== "number") return;
+      MAP.myLat = lat; MAP.myLng = lng; MAP.hasRealGeo = true;
+      window.API.setSharing("exact").catch(function () {});
+      window.API.saveLocation(lat, lng).catch(function () {});
+      if (MAP.gl) { try { MAP.gl.easeTo({ center: [lng, lat], zoom: 2.4, duration: 1500 }); } catch (e) {} }
+      // si el mapa ya está montado, refrescamos marcadores; si no, el polling lo hará
+      if (MAP.built) { if (!MAP.poll) MAP.poll = setInterval(refreshUsers, 5000); refreshUsers(); }
+    };
+
     function buildMapLibre() {
       if (MAP.built) return;
       var host = document.getElementById("globeHost");
