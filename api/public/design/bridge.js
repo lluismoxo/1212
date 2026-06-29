@@ -818,6 +818,8 @@
     // Pinta/actualiza los marcadores sin recrear el mapa (mueve los existentes).
     function renderMarkers(users) {
       if (!MAP.gl || !window.maplibregl) return;
+      // si el mapa aún no cargó, esperamos a 'load' y reintentamos
+      if (!MAP.gl.loaded()) { MAP.gl.once("load", function () { renderMarkers(users); }); return; }
       var seen = {};
       users.forEach(function (u) {
         if (u.lat == null || u.lng == null) return;
@@ -871,20 +873,22 @@
       MAP.gl = new window.maplibregl.Map({
         container: host,
         style: MAP_STYLE,
-        center: [0, 25],
-        zoom: 1.4,
+        center: [10, 30],
+        zoom: 1.6,                  // vista global: se ve el globo
+        renderWorldCopies: false,   // mundo único (mejor para globo)
         attributionControl: { compact: true },
-        dragRotate: false,          // interacción táctil, sin rotación con ratón
+        dragRotate: false,          // sin rotación con ratón
         pitchWithRotate: false,
-        touchZoomRotate: true,
+        touchZoomRotate: true,      // zoom/giro táctil
       });
-      // globo 3D + estética nocturna reforzada
-      MAP.gl.on("style.load", function () {
-        try { MAP.gl.setProjection({ type: "globe" }); } catch (e) {}
-        try {
-          MAP.gl.setPaintProperty("background", "background-color", "#05070d");
-        } catch (e) {}
-      });
+
+      function applyGlobe() {
+        try { MAP.gl.setProjection({ type: "globe" }); } catch (e) { console.warn("[bridge] globe:", e.message); }
+        try { MAP.gl.setPaintProperty("background", "background-color", "#05070d"); } catch (e) {}
+      }
+      // aplicar globo en cuanto el estilo esté listo (y reforzar tras load)
+      MAP.gl.on("style.load", applyGlobe);
+      MAP.gl.on("load", function () { applyGlobe(); setTimeout(applyGlobe, 400); });
 
       // geolocalización de alta precisión
       if (navigator.geolocation) {
@@ -892,17 +896,30 @@
           MAP.myLat = pos.coords.latitude; MAP.myLng = pos.coords.longitude;
           window.API.setSharing("exact").catch(function () {});
           window.API.saveLocation(MAP.myLat, MAP.myLng).catch(function () {});
-          // centrar suavemente en mi posición (vista global -> calle)
-          if (MAP.gl) MAP.gl.flyTo({ center: [MAP.myLng, MAP.myLat], zoom: 11, speed: 0.8, curve: 1.4 });
+          // giramos el globo hacia mi posición manteniendo zoom bajo (~2.2): así
+          // se conserva el aspecto esférico y mi punto queda centrado. El usuario
+          // hace zoom a calle con los botones/táctil cuando quiera.
+          if (MAP.gl) {
+            setTimeout(function () {
+              if (MAP.gl) MAP.gl.easeTo({ center: [MAP.myLng, MAP.myLat], zoom: 2.4, duration: 2200 });
+            }, 1500);
+          }
           refreshUsers();
-          // tiempo real por polling cada 5s (sin recrear el mapa)
           if (MAP.poll) clearInterval(MAP.poll);
           MAP.poll = setInterval(refreshUsers, 5000);
         }, function (err) {
           console.warn("[bridge] geo denegada:", err && err.message);
-        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+          refreshUsers(); // por si hay otros usuarios aunque no tengamos mi pos
+        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 });
       }
     }
+
+    // Zoom desde los botones +/- del diseño.
+    window.__1212_mapZoom = function (dir) {
+      if (!MAP.gl) return;
+      if (dir === "in") MAP.gl.zoomIn({ duration: 300 });
+      else MAP.gl.zoomOut({ duration: 300 });
+    };
 
     function loadMap() {
       // el diseño llama initGlobe al entrar; aquí solo aseguramos el build.
