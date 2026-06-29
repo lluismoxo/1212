@@ -828,8 +828,9 @@
     // Pinta/actualiza los marcadores sin recrear el mapa (mueve los existentes).
     function renderMarkers(users) {
       if (!MAP.gl || !window.maplibregl) return;
-      // si el mapa aún no cargó, esperamos a 'load' y reintentamos
-      if (!MAP.gl.loaded()) { MAP.gl.once("load", function () { renderMarkers(users); }); return; }
+      // Los marcadores son elementos HTML posicionados por lng/lat; NO necesitan
+      // que el estilo/tiles estén cargados, solo que el mapa exista. Pintarlos sin
+      // esperar a isStyleLoaded/load hace que el punto aparezca de inmediato.
       var seen = {};
       users.forEach(function (u) {
         if (u.lat == null || u.lng == null) return;
@@ -858,20 +859,28 @@
     }
 
     // Trae a los usuarios reales (yo + cercanos 'exact') y refresca marcadores.
+    // me() se cachea (solo cambia el username/nombre, no en cada tick) para que el
+    // refresco sea 1 sola llamada (nearby) y los marcadores aparezcan rápido.
+    function paintFrom(me, rows) {
+      MAP.myUsername = me && me.username;
+      var others = (rows || [])
+        .filter(function (r) { return r.username !== MAP.myUsername; })
+        .map(function (r) { return mapNearby(r, MAP.myLat, MAP.myLng, false); })
+        .filter(function (u) { return u.lat != null && u.lng != null; });
+      var list = others;
+      if (MAP.hasRealGeo) {
+        var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: MAP.myLat, lng: MAP.myLng }, MAP.myLat, MAP.myLng, true);
+        list = [meUser].concat(others);
+      }
+      logic.USERS = list;
+      renderMarkers(logic.USERS);
+    }
     function refreshUsers() {
       if (MAP.myLat == null) return;
-      window.API.me().then(function (me) {
-        MAP.myUsername = me && me.username;
-        var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: MAP.myLat, lng: MAP.myLng }, MAP.myLat, MAP.myLng, true);
-        return window.API.nearby(MAP.myLat, MAP.myLng).then(function (rows) {
-          var others = (rows || [])
-            .filter(function (r) { return r.username !== MAP.myUsername; })
-            .map(function (r) { return mapNearby(r, MAP.myLat, MAP.myLng, false); })
-            .filter(function (u) { return u.lat != null && u.lng != null; });
-          logic.USERS = [meUser].concat(others);
-          renderMarkers(logic.USERS);
-        });
-      }).catch(function (e) { console.warn("[bridge] refreshUsers:", e.message); });
+      var mePromise = MAP.meCache ? Promise.resolve(MAP.meCache) : window.API.me().then(function (m) { MAP.meCache = m; return m; });
+      Promise.all([mePromise, window.API.nearby(MAP.myLat, MAP.myLng)])
+        .then(function (res) { paintFrom(res[0], res[1]); })
+        .catch(function (e) { console.warn("[bridge] refreshUsers:", e.message); });
     }
 
     function buildMapLibre() {
@@ -895,43 +904,56 @@
       function applyGlobe() {
         try { MAP.gl.setProjection({ type: "globe" }); } catch (e) { console.warn("[bridge] globe:", e.message); }
         try { MAP.gl.setPaintProperty("background", "background-color", "#05070d"); } catch (e) {}
-        // Aro de luz blanca SUAVE alrededor del globo (halo atmosférico), manteniendo
-        // el fondo oscuro nocturno. El borde superior tiñe un blanco tenue.
+        // Aro de luz alrededor del globo (halo atmosférico) — más marcado, pero
+        // manteniendo el espacio oscuro nocturno y el contraste del mapa.
         try {
           MAP.gl.setFog({
-            "color": "rgba(255,255,255,0.10)",   // halo en el borde del globo (sutil)
-            "high-color": "rgba(120,150,200,0.10)",
-            "space-color": "#05070d",            // espacio oscuro (no perder contraste)
-            "horizon-blend": 0.02,                // aro fino
-            "star-intensity": 0.05,
+            "color": "rgba(180,205,255,0.45)",     // halo blanco-azulado visible en el borde
+            "high-color": "rgba(120,160,230,0.28)", // tinte atmosférico
+            "space-color": "#04060c",               // espacio oscuro (contraste)
+            "horizon-blend": 0.06,                  // aro más ancho/luminoso
+            "star-intensity": 0.08,
           });
         } catch (e) {}
       }
-      // aplicar globo en cuanto el estilo esté listo (y reforzar tras load)
       MAP.gl.on("style.load", applyGlobe);
       MAP.gl.on("load", function () { applyGlobe(); setTimeout(applyGlobe, 400); });
 
-      // geolocalización de alta precisión
+      // Cargamos a los OTROS usuarios cuanto antes (no esperamos a tener geo):
+      // usamos la última posición guardada en el backend o una posición por
+      // defecto solo para la consulta nearby. El propio marcador se pinta en
+      // cuanto la geolocalización del dispositivo responde.
+      function startPolling() {
+        if (MAP.poll) clearInterval(MAP.poll);
+        refreshUsers();
+        MAP.poll = setInterval(refreshUsers, 5000);
+      }
+
       if (navigator.geolocation) {
+        // 1) intento rápido con baja precisión (responde casi al instante).
         navigator.geolocation.getCurrentPosition(function (pos) {
           MAP.myLat = pos.coords.latitude; MAP.myLng = pos.coords.longitude;
+          MAP.hasRealGeo = true;
           window.API.setSharing("exact").catch(function () {});
           window.API.saveLocation(MAP.myLat, MAP.myLng).catch(function () {});
-          // giramos el globo hacia mi posición manteniendo zoom bajo (~2.2): así
-          // se conserva el aspecto esférico y mi punto queda centrado. El usuario
-          // hace zoom a calle con los botones/táctil cuando quiera.
-          if (MAP.gl) {
-            setTimeout(function () {
-              if (MAP.gl) MAP.gl.easeTo({ center: [MAP.myLng, MAP.myLat], zoom: 2.4, duration: 2200 });
-            }, 1500);
-          }
-          refreshUsers();
-          if (MAP.poll) clearInterval(MAP.poll);
-          MAP.poll = setInterval(refreshUsers, 5000);
+          // giramos hacia mi zona pero MANTENIENDO zoom bajo (~1.9) para conservar
+          // el globo esférico y el aro; el usuario acerca a calle con +/- o pellizco.
+          if (MAP.gl) MAP.gl.easeTo({ center: [MAP.myLng, MAP.myLat], zoom: 1.9, duration: 1800 });
+          startPolling();
+          // 2) refinamos con alta precisión en segundo plano (sin bloquear).
+          navigator.geolocation.getCurrentPosition(function (hp) {
+            MAP.myLat = hp.coords.latitude; MAP.myLng = hp.coords.longitude;
+            window.API.saveLocation(MAP.myLat, MAP.myLng).catch(function () {});
+            refreshUsers();
+          }, function () {}, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
         }, function (err) {
-          console.warn("[bridge] geo denegada:", err && err.message);
-          refreshUsers(); // por si hay otros usuarios aunque no tengamos mi pos
-        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 20000 });
+          console.warn("[bridge] geo:", err && err.message);
+          // sin geo: igualmente cargamos a otros usuarios con una pos central.
+          MAP.myLat = MAP.myLat || 40; MAP.myLng = MAP.myLng || 0;
+          startPolling();
+        }, { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 });
+      } else {
+        MAP.myLat = 40; MAP.myLng = 0; startPolling();
       }
     }
 
