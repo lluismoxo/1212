@@ -774,73 +774,139 @@
         me: !!isMe,
       };
     }
-    // Override de initGlobe: tras construir el globo (markup), reconfiguramos
-    // los colores de los puntos a lo pedido — yo = azul luminoso, otros = blanco
-    // luminoso — sin tocar el markup del diseño.
-    var MY_BLUE = "#4FA3FF";   // mi punto
-    var OTHER_WHITE = "#ffffff"; // otros usuarios
-    if (!logic.__globeWrapped && logic.initGlobe) {
-      var _initGlobe = logic.initGlobe.bind(logic);
-      logic.initGlobe = function () {
-        _initGlobe();
-        var g = logic._globe;
-        if (!g) return;
-        try {
-          g.pointColor(function (d) { return d.me ? MY_BLUE : OTHER_WHITE; });
-          // aros (rings) alrededor de mi punto en azul para destacar
-          g.ringColor(function () { return function (t) { return "rgba(79,163,255," + (1 - t) + ")"; }; });
-        } catch (e) {}
-      };
+    // ============================================================================
+    //  MAPA — MapLibre GL JS + OpenStreetMap (OpenFreeMap dark), globe 3D.
+    //  Reemplaza globe.gl. Tiempo real por polling de /location/nearby.
+    //  Marcadores: yo = punto azul pulsante; otros = puntos blancos con glow.
+    //  Click en otro usuario -> bottom sheet con su perfil (openMember).
+    // ============================================================================
+    var MAP = {
+      gl: null,            // instancia MapLibre
+      markers: {},         // username -> { el, marker }
+      myLat: null, myLng: null, myUsername: null,
+      poll: null,          // intervalo de polling
+      built: false,
+    };
+    var MAP_STYLE = "https://tiles.openfreemap.org/styles/dark"; // estilo nocturno OSM, sin API key
+
+    // Override de initGlobe(): el diseño lo llama al entrar al mapa. Construimos
+    // MapLibre en #globeHost. Idempotente: no recrea si ya existe.
+    if (!logic.__globeWrapped) {
+      logic.initGlobe = function () { buildMapLibre(); };
+      logic.destroyGlobe = function () { teardownMap(); };
       logic.__globeWrapped = true;
     }
 
-    // Override de flyToUser (click en un punto): si es OTRO usuario, abrimos su
-    // perfil (como en comunidades). Si soy yo, mantenemos el zoom original.
-    if (!logic.__flyWrapped && logic.flyToUser) {
-      var _flyToUser = logic.flyToUser.bind(logic);
-      logic.flyToUser = function (d) {
-        if (d && !d.me) {
-          if (logic.openMember) logic.openMember({ nm: d.nm, user: d.user, username: d.username, lvl: d.lvl, c: d.c, city: d.city, links: d.links || [] });
-          return;
-        }
-        _flyToUser(d);
-      };
-      logic.__flyWrapped = true;
+    function teardownMap() {
+      if (MAP.poll) { clearInterval(MAP.poll); MAP.poll = null; }
+      if (MAP.gl) { try { MAP.gl.remove(); } catch (e) {} MAP.gl = null; }
+      MAP.markers = {}; MAP.built = false;
     }
 
-    function reinitGlobe() {
-      // recrea el globo para que tome los USERS nuevos.
-      try { if (logic.destroyGlobe) logic.destroyGlobe(); } catch (e) {}
-      logic._globe = null;
-      if (logic.state.screen === "mapa" && logic.initGlobe) {
-        requestAnimationFrame(function () { requestAnimationFrame(function () { logic.initGlobe(); }); });
+    // Crea el elemento DOM de un marcador (yo azul pulsante / otros blanco glow).
+    function makeMarkerEl(isMe) {
+      var el = document.createElement("div");
+      el.className = isMe ? "mk-me" : "mk-other";
+      el.style.cssText = "width:18px;height:18px;border-radius:50%;cursor:pointer;"
+        + (isMe
+          ? "background:#4FA3FF;box-shadow:0 0 0 4px rgba(79,163,255,.25),0 0 14px 3px rgba(79,163,255,.7);"
+          : "background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.18),0 0 12px 2px rgba(255,255,255,.55);");
+      el.style.animation = "mkPulse 2.2s ease-in-out infinite";
+      return el;
+    }
+
+    // Pinta/actualiza los marcadores sin recrear el mapa (mueve los existentes).
+    function renderMarkers(users) {
+      if (!MAP.gl || !window.maplibregl) return;
+      var seen = {};
+      users.forEach(function (u) {
+        if (u.lat == null || u.lng == null) return;
+        var key = u.username || ("me" + (u.me ? "" : Math.random()));
+        seen[key] = true;
+        if (MAP.markers[key]) {
+          MAP.markers[key].marker.setLngLat([u.lng, u.lat]); // mover, no recrear
+          MAP.markers[key].data = u;
+        } else {
+          var el = makeMarkerEl(!!u.me);
+          var marker = new window.maplibregl.Marker({ element: el }).setLngLat([u.lng, u.lat]).addTo(MAP.gl);
+          var entry = { el: el, marker: marker, data: u };
+          if (!u.me) {
+            el.addEventListener("click", function () {
+              var d = entry.data;
+              if (logic.openMember) logic.openMember({ nm: d.nm, user: d.user, username: d.username, lvl: d.lvl, c: d.c, city: d.city, links: d.links || [] });
+            });
+          }
+          MAP.markers[key] = entry;
+        }
+      });
+      // quitar marcadores de usuarios que ya no están
+      Object.keys(MAP.markers).forEach(function (k) {
+        if (!seen[k]) { try { MAP.markers[k].marker.remove(); } catch (e) {} delete MAP.markers[k]; }
+      });
+    }
+
+    // Trae a los usuarios reales (yo + cercanos 'exact') y refresca marcadores.
+    function refreshUsers() {
+      if (MAP.myLat == null) return;
+      window.API.me().then(function (me) {
+        MAP.myUsername = me && me.username;
+        var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: MAP.myLat, lng: MAP.myLng }, MAP.myLat, MAP.myLng, true);
+        return window.API.nearby(MAP.myLat, MAP.myLng).then(function (rows) {
+          var others = (rows || [])
+            .filter(function (r) { return r.username !== MAP.myUsername; })
+            .map(function (r) { return mapNearby(r, MAP.myLat, MAP.myLng, false); })
+            .filter(function (u) { return u.lat != null && u.lng != null; });
+          logic.USERS = [meUser].concat(others);
+          renderMarkers(logic.USERS);
+        });
+      }).catch(function (e) { console.warn("[bridge] refreshUsers:", e.message); });
+    }
+
+    function buildMapLibre() {
+      if (MAP.built) return;
+      var host = document.getElementById("globeHost");
+      if (!host || !window.maplibregl) { setTimeout(buildMapLibre, 120); return; }
+      MAP.built = true;
+
+      MAP.gl = new window.maplibregl.Map({
+        container: host,
+        style: MAP_STYLE,
+        center: [0, 25],
+        zoom: 1.4,
+        attributionControl: { compact: true },
+        dragRotate: false,          // interacción táctil, sin rotación con ratón
+        pitchWithRotate: false,
+        touchZoomRotate: true,
+      });
+      // globo 3D + estética nocturna reforzada
+      MAP.gl.on("style.load", function () {
+        try { MAP.gl.setProjection({ type: "globe" }); } catch (e) {}
+        try {
+          MAP.gl.setPaintProperty("background", "background-color", "#05070d");
+        } catch (e) {}
+      });
+
+      // geolocalización de alta precisión
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          MAP.myLat = pos.coords.latitude; MAP.myLng = pos.coords.longitude;
+          window.API.setSharing("exact").catch(function () {});
+          window.API.saveLocation(MAP.myLat, MAP.myLng).catch(function () {});
+          // centrar suavemente en mi posición (vista global -> calle)
+          if (MAP.gl) MAP.gl.flyTo({ center: [MAP.myLng, MAP.myLat], zoom: 11, speed: 0.8, curve: 1.4 });
+          refreshUsers();
+          // tiempo real por polling cada 5s (sin recrear el mapa)
+          if (MAP.poll) clearInterval(MAP.poll);
+          MAP.poll = setInterval(refreshUsers, 5000);
+        }, function (err) {
+          console.warn("[bridge] geo denegada:", err && err.message);
+        }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
       }
     }
+
     function loadMap() {
-      if (!navigator.geolocation) { console.warn("[bridge] sin geolocalización"); return; }
-      navigator.geolocation.getCurrentPosition(function (pos) {
-        var myLat = pos.coords.latitude, myLng = pos.coords.longitude;
-        // Abrir el mapa = compartir ubicación exacta (para aparecer como punto y
-        // poder ver a los demás que también la comparten). Decisión del producto.
-        window.API.setSharing("exact").catch(function () {});
-        window.API.saveLocation(myLat, myLng).catch(function () {});
-        window.API.me().then(function (me) {
-          var meUser = mapNearby({ display_name: me && me.display_name, username: me && me.username, current_level: (me && me.level && me.level.current_level) || (me && me.current_level), city: me && me.city, lat: myLat, lng: myLng }, myLat, myLng, true);
-          return window.API.nearby(myLat, myLng).then(function (rows) {
-            var others = (rows || [])
-              .filter(function (r) { return r.username !== (me && me.username); })
-              .map(function (r) { return mapNearby(r, myLat, myLng, false); })
-              .filter(function (u) { return u.lat != null && u.lng != null; }); // solo los que comparten 'exact'
-            logic.USERS = [meUser].concat(others);
-            reinitGlobe();
-          });
-        }).catch(function (e) { console.warn("[bridge] map:", e.message); });
-      }, function (err) {
-        console.warn("[bridge] geo denegada:", err && err.message);
-        // sin permiso: dejamos USERS vacío (globo sin puntos) en vez de gente falsa.
-        logic.USERS = [];
-        reinitGlobe();
-      }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+      // el diseño llama initGlobe al entrar; aquí solo aseguramos el build.
+      setTimeout(buildMapLibre, 60);
     }
 
     // ------- navegación: cargar datos reales al entrar a cada pantalla -------
