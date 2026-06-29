@@ -802,8 +802,11 @@
     // Override de initGlobe(): el diseño lo llama al entrar al mapa. Construimos
     // MapLibre en #globeHost. Idempotente: no recrea si ya existe.
     if (!logic.__globeWrapped) {
-      logic.initGlobe = function () { buildMapLibre(); };
-      logic.destroyGlobe = function () { teardownMap(); };
+      // El diseño rastrea el mapa con this._globe (en componentDidUpdate decide
+      // crear/destruir según ese flag). Lo mantenemos sincronizado con MAP.gl,
+      // si no, al salir no se destruye y al reentrar no se reconstruye.
+      logic.initGlobe = function () { logic._globe = true; buildMapLibre(); };
+      logic.destroyGlobe = function () { teardownMap(); logic._globe = null; };
       logic.__globeWrapped = true;
     }
 
@@ -811,6 +814,8 @@
       if (MAP.poll) { clearInterval(MAP.poll); MAP.poll = null; }
       if (MAP.gl) { try { MAP.gl.remove(); } catch (e) {} MAP.gl = null; }
       MAP.markers = {}; MAP.built = false;
+      MAP.meCache = null; MAP.hasRealGeo = false;
+      MAP.myLat = null; MAP.myLng = null;
     }
 
     // Crea el elemento DOM de un marcador (yo azul pulsante / otros blanco glow).
