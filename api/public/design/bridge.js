@@ -262,6 +262,10 @@
 
   async function loadData(logic) {
     try {
+      // estadísticas reales (también para el resumen del home: racha, etc.)
+      window.API.call("/profiles/me/stats").then(function (s) {
+        logic.setState({ stats: { diasActivos: s.diasActivos, habitos: s.habitos, racha: s.racha, diario: s.diario } });
+      }).catch(function () {});
       var TODAY = logic.TODAY != null ? logic.TODAY : 6;
       var hs = await window.API.habits();
       var logs = await window.API.habitsToday(); // [{habit_id, log_date, done}]
@@ -437,24 +441,30 @@
     // Cargar los datos de la cuenta al abrir Ajustes > Cuenta.
     function loadAccount() {
       window.API.me().then(function (p) {
+        // enlaces sociales: array [{kind,url}] -> objeto {kind:url} para los inputs
+        var links = {};
+        (p.links || []).forEach(function (l) { links[l.kind] = l.url; });
         logic.setState({ acct: {
           display_name: p.display_name || "", username: p.username || "",
-          bio: p.bio || "", city: p.city || "", avatar_url: p.avatar_url || "",
           location_sharing: p.location_sharing || "city",
+          links: links,
         } });
       }).catch(function (e) { console.warn("[bridge] account:", e.message); });
     }
 
-    // Guardar los cambios de la cuenta (PATCH /profiles/me con los campos reales).
+    // Guardar la cuenta: nombre/usuario (PATCH /profiles/me) + enlaces sociales
+    // (PUT /profiles/me/links). Solo datos reales del perfil.
     window.__1212_saveAccount = function (a) {
       var body = {};
       if (a.display_name != null) body.displayName = a.display_name;
       if (a.username != null && a.username.trim()) body.username = a.username.trim().replace(/^@/, "");
-      body.bio = a.bio || null;
-      body.city = a.city || null;
-      body.avatarUrl = (a.avatar_url || "").trim() || null;
-      window.API.call("/profiles/me", { method: "PATCH", body: body }).then(function () {
-        // refrescar nombre en el resto de la app + volver al menú de ajustes
+      // enlaces: objeto {kind:url} -> array, descartando vacíos
+      var links = [];
+      var L = a.links || {};
+      Object.keys(L).forEach(function (k) { var v = (L[k] || "").trim(); if (v) links.push({ kind: k, url: v }); });
+      var p1 = window.API.call("/profiles/me", { method: "PATCH", body: body });
+      var p2 = window.API.call("/profiles/me/links", { method: "PUT", body: { links: links } });
+      Promise.all([p1, p2]).then(function () {
         applyLevelName(logic, realData.level, a.display_name || realData.name);
         logic.setState({ sheet: "settings" });
       }).catch(function (e) { console.warn("[bridge] saveAccount:", e.code || e.message); });
@@ -885,6 +895,17 @@
       function applyGlobe() {
         try { MAP.gl.setProjection({ type: "globe" }); } catch (e) { console.warn("[bridge] globe:", e.message); }
         try { MAP.gl.setPaintProperty("background", "background-color", "#05070d"); } catch (e) {}
+        // Aro de luz blanca SUAVE alrededor del globo (halo atmosférico), manteniendo
+        // el fondo oscuro nocturno. El borde superior tiñe un blanco tenue.
+        try {
+          MAP.gl.setFog({
+            "color": "rgba(255,255,255,0.10)",   // halo en el borde del globo (sutil)
+            "high-color": "rgba(120,150,200,0.10)",
+            "space-color": "#05070d",            // espacio oscuro (no perder contraste)
+            "horizon-blend": 0.02,                // aro fino
+            "star-intensity": 0.05,
+          });
+        } catch (e) {}
       }
       // aplicar globo en cuanto el estilo esté listo (y reforzar tras load)
       MAP.gl.on("style.load", applyGlobe);
