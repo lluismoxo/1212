@@ -19,12 +19,33 @@ const RETURN_SCHEME = "app1212://auth";
 export default function App() {
   const ref = useRef<WebView>(null);
 
-  // El WebView de iOS solo entrega geolocalización si la app pidió antes el
-  // permiso nativo de ubicación. Lo solicitamos al arrancar (con permiso, el
-  // navigator.geolocation del WebView funciona y el mapa muestra el punto azul).
-  useEffect(() => {
-    Location.requestForegroundPermissionsAsync().catch(() => {});
+  // Empuja una ubicación al WebView (el bridge la usa para el punto azul).
+  const pushLocation = useCallback((lat: number, lng: number) => {
+    ref.current?.injectJavaScript(
+      `window.__1212_setLocation && window.__1212_setLocation(${lat}, ${lng}); true;`,
+    );
   }, []);
+
+  // El navigator.geolocation del WebView no es fiable en iOS (sobre todo en el
+  // simulador). Obtenemos la ubicación de forma NATIVA (expo-location) y se la
+  // inyectamos al WebView; así el punto azul aparece siempre que haya permiso.
+  useEffect(() => {
+    let sub: Location.LocationSubscription | null = null;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      try {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        pushLocation(pos.coords.latitude, pos.coords.longitude);
+      } catch { /* noop */ }
+      // y seguimos sus cambios para mantener el punto actualizado
+      sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 25, timeInterval: 8000 },
+        (pos) => pushLocation(pos.coords.latitude, pos.coords.longitude),
+      );
+    })().catch(() => {});
+    return () => { if (sub) sub.remove(); };
+  }, [pushLocation]);
 
   // Inyecta los tokens (del deep link) en el WebView para que el bridge cree sesión.
   const injectTokens = useCallback((access: string, refresh: string) => {
