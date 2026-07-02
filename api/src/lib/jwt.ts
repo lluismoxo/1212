@@ -26,6 +26,9 @@ export async function verifyAccessToken(token: string): Promise<AccessClaims> {
   const { payload } = await jwtVerify(token, secret(), {
     issuer: "1212-api",
     audience: "1212-app",
+    // Fijar el algoritmo evita ataques de confusión de algoritmo / downgrade a
+    // "none" (solo aceptamos exactamente el que firmamos). CWE-347.
+    algorithms: ["HS256"],
   });
   if (!payload.sub || typeof payload.role !== "string") {
     throw new Error("Claims inválidos");
