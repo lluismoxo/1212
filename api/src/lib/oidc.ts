@@ -36,6 +36,9 @@ export async function verifyIdToken(provider: Provider, idToken: string): Promis
   const { payload } = await jwtVerify(idToken, JWKS[provider], {
     issuer: ISSUERS[provider],
     audience,
+    // id_tokens de Google/Apple usan RS256/ES256 (asimétrico). Fijarlos impide
+    // que un token forjado con "none" o HS256 (sobre la clave pública) pase.
+    algorithms: ["RS256", "ES256"],
   });
 
   return extractIdentity(provider, payload);

@@ -171,3 +171,43 @@ Base sólida (auth, injection, authz por dueño, cripto correctos). Penalizan: s
 
 ### Riesgos residuales
 Ubicación exacta pública (opt-in), sin RLS (mitigado), rate limit en memoria, deep link por scheme. Aceptables para MVP; abordar según el plan antes de escala.
+
+---
+
+## FASE 2 — HARDENING ITERATIVO (2026-07-02, rama `security-hardening`)
+
+Segunda pasada. Todos los fixes con test/typecheck. Solo servidor + config (no toca bridge.js, que va en PR #32).
+
+### 🔴 H10 — Account pre-hijacking al enlazar OIDC (CWE-287)
+`loginWithIdentity` fusionaba una identidad Google con una cuenta password existente por email SIN exigir `email_verified`. Un atacante podía pre-crear una cuenta password con el email de la víctima (no hay verificación de email en el registro) y quedar fusionado cuando la víctima entra con Google.
+**Fix:** solo se auto-enlaza si `identity.emailVerified === true` (`canLinkToExistingAccount`, con test); al enlazar un email verificado se marca la cuenta como `email_verified=true`.
+**Residual:** sin flujo de verificación de email en el registro password, el pre-hijack con *email verificado por el atacante* sigue siendo teórico → pendiente añadir verificación de email al alta password.
+
+### 🟠 H11 — Oráculo de enumeración por temporización en login (CWE-208)
+`loginWithPassword` retornaba antes de `bcrypt.compare` cuando el email no existía → el tiempo de respuesta distinguía "email existe" de "no existe".
+**Fix:** se compara siempre contra un hash bcrypt señuelo. Bcrypt subido a 12 rounds.
+
+### 🟠 H12 — Rate limit eludible por X-Forwarded-For falsificado (CWE-290)
+La clave del rate limit salía de `x-forwarded-for`, cabecera que el cliente controla → fuerza bruta rotando la cabecera.
+**Fix:** `TRUST_PROXY` (default false). Sin proxy de confianza se usa la IP real del socket; XFF solo se respeta si `TRUST_PROXY=true`.
+
+### 🟠 H13 — id_token / access token sin pin de algoritmo (CWE-347)
+`jwtVerify` no fijaba `algorithms` → margen a confusión de algoritmo / downgrade a "none".
+**Fix:** access token fijado a `HS256`; id_tokens OIDC a `RS256/ES256`.
+
+### 🟡 H14 — Estáticos (/design, /legal) sin cabeceras de seguridad (era H9)
+Se servían antes de `secureHeaders`.
+**Fix:** middleware propio con CSP a medida (permite el inline del runtime + unpkg/openfreemap/fontshare, bloquea object/base/frame-ancestors), nosniff, no-referrer, X-Frame-Options DENY.
+
+### 🟡 H15 — Guardrails de configuración de producción
+La API arrancaba en producción con JWT_SECRET de ejemplo, CORS con localhost o DB sin TLS.
+**Fix:** `productionGuards` (con test) aborta el arranque si `NODE_ENV=production` y el secreto es corto/de ejemplo, CORS incluye localhost/exp, o `DATABASE_URL` no exige TLS.
+
+### 🟡 H16 — Token de reset filtrable por NODE_ENV mal configurado
+`devResetToken` se devolvía con `NODE_ENV !== "production"` (incluye vacío/typo).
+**Fix:** solo con `NODE_ENV === "development"`.
+
+### Residuales tras Fase 2 (no aplicados a ciegas)
+- **RLS (H3):** requiere rol de app con permisos mínimos + pruebas contra DB real. No se aplica a ciegas para no romper la app (conecta como owner hoy). Plan: crear rol `app_rw`, políticas por `profile_id`, migrar el connection string.
+- `meta()` de auth aún guarda la IP de XFF sin gate (solo es metadato de auditoría, no control).
+- Tokens en localStorage del WebView (menos seguro que Keychain) — es territorio de la arquitectura WebView.
