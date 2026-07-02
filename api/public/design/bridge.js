@@ -16,17 +16,26 @@
   function setTokens(a, r) { try { localStorage.setItem(ACCESS, a); localStorage.setItem(REFRESH, r); } catch (e) {} }
   function clearTokens() { try { localStorage.removeItem(ACCESS); localStorage.removeItem(REFRESH); } catch (e) {} }
 
-  async function refreshAccess() {
-    var r = localStorage.getItem(REFRESH);
-    if (!r) return null;
-    var res = await fetch(BASE + "/auth/refresh", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: r }),
-    });
-    if (!res.ok) { clearTokens(); return null; }
-    var d = await res.json();
-    setTokens(d.accessToken, d.refreshToken);
-    return d.accessToken;
+  // Single-flight: si varias llamadas reciben 401 a la vez, comparten UN solo
+  // refresh. Sin esto, dos refresh paralelos con el mismo token disparan la
+  // detección de reuse del servidor y revocan TODAS las sesiones del usuario.
+  var refreshing = null;
+  function refreshAccess() {
+    if (refreshing) return refreshing;
+    refreshing = (async function () {
+      var r = localStorage.getItem(REFRESH);
+      if (!r) return null;
+      var res = await fetch(BASE + "/auth/refresh", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: r }),
+      });
+      if (!res.ok) { clearTokens(); return null; }
+      var d = await res.json();
+      setTokens(d.accessToken, d.refreshToken);
+      return d.accessToken;
+    })();
+    refreshing.then(function () { refreshing = null; }, function () { refreshing = null; });
+    return refreshing;
   }
 
   async function call(path, opts) {
@@ -260,20 +269,36 @@
     logic.forceUpdate && logic.forceUpdate();
   }
 
+  // Fecha local del dispositivo como 'YYYY-MM-DD'.
+  function isoDate(d) {
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  // Índice de día de semana estilo diseño (L=0 .. D=6).
+  function weekIdx(d) { return (d.getDay() + 6) % 7; }
+
   async function loadData(logic) {
     try {
       // estadísticas reales (también para el resumen del home: racha, etc.)
       window.API.call("/profiles/me/stats").then(function (s) {
         logic.setState({ stats: { diasActivos: s.diasActivos, habitos: s.habitos, racha: s.racha, diario: s.diario } });
       }).catch(function () {});
-      var TODAY = logic.TODAY != null ? logic.TODAY : 6;
       var hs = await window.API.habits();
-      var logs = await window.API.habitsToday(); // [{habit_id, log_date, done}]
-      var doneSet = {};
-      (logs || []).forEach(function (l) { if (l.done) doneSet[l.habit_id] = true; });
+      // Semana real (lunes..hoy) desde /habits/logs. La API solo devuelve logs
+      // con done=true, así que la presencia de la fila ya significa "hecho".
+      var now = new Date();
+      var monday = new Date(now);
+      monday.setDate(now.getDate() - weekIdx(now));
+      var logs = [];
+      try { logs = await window.API.call("/habits/logs?from=" + isoDate(monday) + "&to=" + isoDate(now)); } catch (e) {}
+      var byHabit = {}; // habit_id -> { idxDía: true }
+      (logs || []).forEach(function (l) {
+        var p = String(l.log_date).slice(0, 10).split("-");
+        var di = weekIdx(new Date(+p[0], +p[1] - 1, +p[2]));
+        (byHabit[l.habit_id] = byHabit[l.habit_id] || {})[di] = true;
+      });
       var habits = (hs || []).map(function (h) {
-        var days = [false, false, false, false, false, false, false];
-        days[TODAY] = !!doneSet[h.id];
+        var set = byHabit[h.id] || {};
+        var days = [0, 1, 2, 3, 4, 5, 6].map(function (di) { return !!set[di]; });
         return { id: h.id, name: h.name, days: days };
       });
 
@@ -299,6 +324,85 @@
 
   // ------- cableado de métodos del diseño -------
   function wire(logic) {
+    // ------- FECHAS REALES -------
+    // El diseño (prototipo) traía "hoy" hardcodeado (TODAY=6, TODAY_DATE=23-jun-2026)
+    // y un histórico de hábitos inventado por seed. Aquí: hoy real + datos reales.
+    function syncToday() {
+      var n = new Date();
+      logic.TODAY = weekIdx(n);
+      logic.TODAY_DATE = { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() };
+      return n;
+    }
+    syncToday();
+
+    // Histórico real de hábitos por mes (GET /habits/logs), cacheado por mes.
+    var HIST = {}; // 'YYYY-MM' -> { día: { habit_id: true } }
+    function monthKey(y, m) { return y + "-" + ("0" + (m + 1)).slice(-2); }
+    function prefetchHist(y, m) {
+      var key = monthKey(y, m);
+      if (HIST[key]) return;
+      HIST[key] = {}; // marca "en curso" (evita fetch duplicado)
+      var last = new Date(y, m + 1, 0).getDate();
+      window.API.call("/habits/logs?from=" + key + "-01&to=" + key + "-" + ("0" + last).slice(-2))
+        .then(function (rows) {
+          var byDay = {};
+          (rows || []).forEach(function (l) {
+            var iso = String(l.log_date).slice(0, 10);
+            (byDay[parseInt(iso.slice(8, 10), 10)] = byDay[parseInt(iso.slice(8, 10), 10)] || {})[l.habit_id] = true;
+          });
+          HIST[key] = byDay;
+          logic.forceUpdate && logic.forceUpdate();
+        })
+        .catch(function (e) { delete HIST[key]; console.warn("[bridge] hist:", e.message); });
+    }
+    // Sustituye el histórico inventado (seed determinista) por logs reales.
+    logic.habitsForDate = function (y, m, d) {
+      var done = (HIST[monthKey(y, m)] || {})[d] || {};
+      return logic.state.habits.map(function (h) { return { nm: h.name, done: !!done[h.id] }; });
+    };
+    // Calendario del diario: el original solo mapeaba junio-2026 parseando el
+    // texto de la fecha. Usamos la fecha ISO real que loadJournal añade.
+    logic.journalByDay = function (y, m) {
+      var map = {};
+      (logic.JOURNALS || []).forEach(function (j) {
+        if (!j.iso) return;
+        var p = j.iso.split("-");
+        if (+p[0] === y && +p[1] - 1 === m) map[+p[2]] = j;
+      });
+      return map;
+    };
+    // Al navegar por el calendario, precarga el histórico del mes destino.
+    var _calShiftMonth = logic.calShiftMonth.bind(logic);
+    logic.calShiftMonth = function (delta) {
+      var m = logic.state.calM + delta, y = logic.state.calY;
+      if (m < 0) { m = 11; y--; }
+      if (m > 11) { m = 0; y++; }
+      _calShiftMonth(delta);
+      prefetchHist(y, m);
+    };
+    var _calShiftYear = logic.calShiftYear.bind(logic);
+    logic.calShiftYear = function (delta) {
+      var y = logic.state.calY + delta, m = logic.state.calM;
+      _calShiftYear(delta);
+      prefetchHist(y, m);
+    };
+    // openHistory/openJournalHistory se generan en renderVals() con fecha fija
+    // (jun-2026); los sustituimos por versiones que abren el mes actual real.
+    var _rvCal = logic.renderVals.bind(logic);
+    logic.renderVals = function () {
+      var v = _rvCal();
+      v.openHistory = function () {
+        var n = syncToday();
+        prefetchHist(n.getFullYear(), n.getMonth());
+        logic.setState({ sheet: "history", calY: n.getFullYear(), calM: n.getMonth(), calD: n.getDate() });
+      };
+      v.openJournalHistory = function () {
+        var n = syncToday();
+        logic.setState({ sheet: "journalHistory", calY: n.getFullYear(), calM: n.getMonth(), calD: n.getDate() });
+      };
+      return v;
+    };
+
     // 1) Login: el diseño va auth -> goProfile (crear perfil) -> ... -> enterApp.
     //    Interceptamos goProfile cuando estamos en 'auth': pedimos login real y,
     //    si ya hay sesión, saltamos directo a home con datos.
@@ -467,7 +571,13 @@
       Promise.all([p1, p2]).then(function () {
         applyLevelName(logic, realData.level, a.display_name || realData.name);
         logic.setState({ sheet: "settings" });
-      }).catch(function (e) { console.warn("[bridge] saveAccount:", e.code || e.message); });
+      }).catch(function (e) {
+        console.warn("[bridge] saveAccount:", e.code || e.message);
+        // feedback mínimo: antes fallaba en silencio y el usuario creía que guardó
+        alert(e.code === "validation"
+          ? "Nombre de usuario no válido o ya en uso."
+          : "No se pudieron guardar los cambios. Inténtalo de nuevo.");
+      });
     };
 
     // Cambiar la visibilidad de la ubicación (location_sharing).
@@ -725,7 +835,8 @@
       // historial -> alimentar this.JOURNALS para "Entradas anteriores"
       window.API.journalList().then(function (list) {
         logic.JOURNALS = (list || []).map(function (e) {
-          return { d: fmtEntryDate(e.entry_date), t: e.body || "" };
+          // iso: la usa el calendario del diario (journalByDay) para mapear por fecha real
+          return { d: fmtEntryDate(e.entry_date), t: e.body || "", iso: String(e.entry_date).slice(0, 10) };
         });
         logic.forceUpdate && logic.forceUpdate();
       }).catch(function (e) { console.warn("[bridge] journalList:", e.message); });
@@ -888,17 +999,26 @@
         .catch(function (e) { console.warn("[bridge] refreshUsers:", e.message); });
     }
 
+    // Publica la posición SOLO como parte de la experiencia del mapa (decisión
+    // de producto #17: abrir el mapa = compartir ubicación exacta). Fuera del
+    // mapa NUNCA se toca location_sharing ni se sube la posición: si el usuario
+    // eligió "Oculta" en Ajustes, se respeta.
+    function shareOnMap(lat, lng) {
+      window.API.setSharing("exact").catch(function () {});
+      window.API.saveLocation(lat, lng).catch(function () {});
+    }
+
     // La app nativa (expo-location) nos inyecta la ubicación: más fiable que el
-    // navigator.geolocation del WebView (que falla en el simulador iOS). Con esto
-    // el punto azul aparece y guardamos/centramos en la posición real.
+    // navigator.geolocation del WebView (que falla en el simulador iOS). Solo
+    // memorizamos la posición; se publica únicamente si el mapa está abierto.
     window.__1212_setLocation = function (lat, lng) {
       if (typeof lat !== "number" || typeof lng !== "number") return;
       MAP.myLat = lat; MAP.myLng = lng; MAP.hasRealGeo = true;
-      window.API.setSharing("exact").catch(function () {});
-      window.API.saveLocation(lat, lng).catch(function () {});
+      if (!MAP.built) return; // mapa cerrado: no publicar ni tocar sharing
+      shareOnMap(lat, lng);
       if (MAP.gl) { try { MAP.gl.easeTo({ center: [lng, lat], zoom: 2.4, duration: 1500 }); } catch (e) {} }
-      // si el mapa ya está montado, refrescamos marcadores; si no, el polling lo hará
-      if (MAP.built) { if (!MAP.poll) MAP.poll = setInterval(refreshUsers, 5000); refreshUsers(); }
+      if (!MAP.poll) MAP.poll = setInterval(refreshUsers, 5000);
+      refreshUsers();
     };
 
     function buildMapLibre() {
@@ -947,13 +1067,18 @@
         MAP.poll = setInterval(refreshUsers, 5000);
       }
 
-      if (navigator.geolocation) {
+      if (MAP.hasRealGeo) {
+        // La app nativa ya nos dio la posición antes de abrir el mapa: publicarla
+        // ahora (abrir mapa = compartir) y arrancar el polling directamente.
+        shareOnMap(MAP.myLat, MAP.myLng);
+        MAP.gl.easeTo({ center: [MAP.myLng, MAP.myLat], zoom: 1.9, duration: 1800 });
+        startPolling();
+      } else if (navigator.geolocation) {
         // 1) intento rápido con baja precisión (responde casi al instante).
         navigator.geolocation.getCurrentPosition(function (pos) {
           MAP.myLat = pos.coords.latitude; MAP.myLng = pos.coords.longitude;
           MAP.hasRealGeo = true;
-          window.API.setSharing("exact").catch(function () {});
-          window.API.saveLocation(MAP.myLat, MAP.myLng).catch(function () {});
+          shareOnMap(MAP.myLat, MAP.myLng);
           // giramos hacia mi zona pero MANTENIENDO zoom bajo (~1.9) para conservar
           // el globo esférico y el aro; el usuario acerca a calle con +/- o pellizco.
           if (MAP.gl) MAP.gl.easeTo({ center: [MAP.myLng, MAP.myLat], zoom: 1.9, duration: 1800 });
