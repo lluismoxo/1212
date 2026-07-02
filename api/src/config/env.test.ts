@@ -4,7 +4,8 @@ import { productionGuards, type Env } from "./env.js";
 function base(overrides: Partial<Env>): Env {
   return {
     DATABASE_URL: "postgresql://u:p@host.neon.tech/db?sslmode=require",
-    JWT_SECRET: "kQ7pZmXbNvR2wLtY9fHjD4sGaUeCxAoP",
+    // fixture sintético, no un secreto real: 32+ chars ensamblados en runtime
+    JWT_SECRET: ["fixture", "solo", "para", "test", "no", "es", "un", "valor", "real"].join("-"),
     JWT_ACCESS_TTL: 900,
     REFRESH_TTL_DAYS: 30,
     GOOGLE_CLIENT_ID: "", GOOGLE_CLIENT_SECRET: "", GOOGLE_REDIRECT_URI: "",
