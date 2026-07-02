@@ -19,14 +19,44 @@ import { adminRoutes } from "./modules/admin/routes.js";
 import { analyticsRoutes } from "./modules/analytics/routes.js";
 import { mediaRoutes } from "./modules/media/routes.js";
 
+// Cabeceras de seguridad para el contenido estático del diseño. CSP a medida:
+// permite inline (lo exige el runtime dc) y las CDNs concretas que usa el mapa,
+// pero bloquea objetos/base/frames y fuerza nosniff/anti-clickjacking.
+function staticSecurityHeaders() {
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com",
+    "style-src 'self' 'unsafe-inline' https://unpkg.com https://api.fontshare.com",
+    "img-src 'self' data: blob: https:",
+    // API propia (mismo origin), tiles OSM, JWKS Google (login), fuentes.
+    "connect-src 'self' https://tiles.openfreemap.org https://*.openfreemap.org https://api.fontshare.com https://cdn.fontshare.com",
+    "font-src 'self' data: https://cdn.fontshare.com https://api.fontshare.com",
+    "worker-src 'self' blob:", // MapLibre crea sus workers desde blob:
+    "object-src 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+  return async (c: import("hono").Context, next: import("hono").Next) => {
+    await next();
+    c.header("Content-Security-Policy", csp);
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("Referrer-Policy", "no-referrer");
+    c.header("X-Frame-Options", "DENY");
+  };
+}
+
 const env = getEnv();
 const app = new Hono();
 
+// Cabeceras de seguridad para los estáticos (/design, /legal). El middleware
+// global secureHeaders() aplica una CSP estricta que rompería los scripts/estilos
+// inline del runtime del diseño; aquí ponemos una CSP hecha a medida que SÍ
+// permite lo inline que el diseño necesita, pero cierra el resto de vectores.
+app.use("/design/*", staticSecurityHeaders());
+app.use("/legal/*", staticSecurityHeaders());
+
 // El diseño (prototipo Claude Design) se sirve estático en /design.
-// Va ANTES de secureHeaders: usa estilos/scripts inline que la CSP bloquearía.
 app.use("/design/*", serveStatic({ root: "./public" }));
-// Web-app propia (diseño del prototipo + datos reales del backend).
-app.use("/app/*", serveStatic({ root: "./public" }));
 // Documentos legales (markdown) servidos para mostrarlos en Ajustes.
 app.use("/legal/*", serveStatic({ root: "./public" }));
 

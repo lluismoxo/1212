@@ -5,7 +5,12 @@ import { signAccessToken } from "../../lib/jwt.js";
 import { getEnv } from "../../config/env.js";
 import { AuthError, type TokenPair } from "./service.js";
 
-const ROUNDS = 10;
+const ROUNDS = 12;
+
+// Hash bcrypt "señuelo" (de una contraseña aleatoria fija) para comparar contra
+// él cuando el email no existe o no tiene contraseña. Iguala el coste de tiempo
+// del login, evitando el oráculo de enumeración por temporización (CWE-208).
+const DUMMY_HASH = "$2a$12$OyW9k7RcENtd1uhoC/0/xOUQJLUyq9lxahVsTauEg/3LBaF.4KN1W";
 
 async function issueFor(userId: string, meta: { userAgent?: string | null; ip?: string | null }): Promise<TokenPair> {
   const env = getEnv();
@@ -50,10 +55,13 @@ export async function loginWithPassword(
   const e = email.toLowerCase().trim();
   const rows = await sql<{ id: string; password_hash: string | null; disabled: boolean }[]>`
     select id, password_hash, disabled from public.auth_users where email = ${e}`;
+  // Comparar SIEMPRE (contra un hash señuelo si no hay cuenta/contraseña) para
+  // que el tiempo de respuesta no revele si el email existe (anti-enumeración).
+  const stored = rows[0]?.password_hash ?? DUMMY_HASH;
+  const ok = await bcrypt.compare(password, stored);
   // mensaje genérico (no revelar si el email existe)
   if (!rows.length || !rows[0].password_hash) throw new AuthError("invalid_credentials", "Credenciales inválidas");
   if (rows[0].disabled) throw new AuthError("account_disabled", "Cuenta deshabilitada");
-  const ok = await bcrypt.compare(password, rows[0].password_hash);
   if (!ok) throw new AuthError("invalid_credentials", "Credenciales inválidas");
   await sql`update public.auth_users set last_login_at = now() where id = ${rows[0].id}`;
   return issueFor(rows[0].id, meta);

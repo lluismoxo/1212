@@ -46,6 +46,13 @@ async function issueTokens(userId: string, meta: SessionMeta): Promise<TokenPair
   return { accessToken, refreshToken, expiresIn: env.JWT_ACCESS_TTL };
 }
 
+// Política pura: ¿puede una identidad OIDC auto-enlazarse a una cuenta
+// existente encontrada por email? Solo si el proveedor verificó el email.
+// (Aislada para test sin DB — evita account pre-hijacking, CWE-287.)
+export function canLinkToExistingAccount(emailVerified: boolean): boolean {
+  return emailVerified === true;
+}
+
 // ── Login / signup vía OIDC ───────────────────────────────────
 // Encuentra o crea el usuario para la identidad verificada y emite tokens.
 export async function loginWithIdentity(
@@ -69,7 +76,16 @@ export async function loginWithIdentity(
           select id from public.auth_users where email = ${identity.email}`;
       }
       if (matched.length) {
+        // Auto-enlazar a una cuenta existente por email SOLO si el proveedor
+        // afirma el email como verificado. Sin esto, un IdP que devuelva un
+        // email no verificado podría enlazarse a la cuenta de otro (CWE-287).
+        if (!canLinkToExistingAccount(identity.emailVerified)) {
+          throw new AuthError("email_not_verified", "El proveedor no verificó el email");
+        }
         uid = matched[0].id;
+        // El enlace de un email verificado confirma la titularidad → marcar la
+        // cuenta como verificada (blinda futuros enlaces y flujos de reset).
+        await tx`update public.auth_users set email_verified = true where id = ${uid}`;
       } else {
         const created = await tx<{ id: string }[]>`
           insert into public.auth_users (email, email_verified)

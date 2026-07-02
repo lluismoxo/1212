@@ -202,7 +202,9 @@ authRoutes.post("/reset-password", async (c) => {
 
 // En desarrollo, devuelve el token de reset en la respuesta (no hay email aún).
 function getDevToken(token: string | null) {
-  return process.env.NODE_ENV !== "production" && token ? { devResetToken: token } : {};
+  // Solo en desarrollo explícito. Con "!== production" cualquier NODE_ENV mal
+  // configurado (o vacío) filtraría el token de reset en la respuesta.
+  return process.env.NODE_ENV === "development" && token ? { devResetToken: token } : {};
 }
 
 const refreshBody = z.object({ refreshToken: z.string().min(10) });
